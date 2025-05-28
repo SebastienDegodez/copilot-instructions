@@ -31,6 +31,8 @@ This project provides a set of best practices, coding rules, and prompt instruct
 - 📝 English-only documentation policy
 - 🤖 Copilot and AI prompt instructions
 - 🔄 TDD-first workflow for C# (see `copilot-instructions.md`)
+- ❓ Follow-up Question Enforcement ([see instructions](.github/instructions/follow-up-question.instructions.md))  
+  AI must ask clarifying questions and show confidence before code generation.
 
 ## 📂 Repository Structure
 
