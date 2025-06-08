@@ -36,8 +36,21 @@ This project provides a set of best practices, coding rules, and prompt instruct
 
 - `.github/instructions/` — All coding rules and best practices (Markdown)
 - `.github/prompts/` — Prompt files for Copilot and AI tools
+- `.github/chatmodes/` — Chatmode files to configure Copilot/AI behavior (e.g. `architect`)
 - `.github/copilot-instructions.md` — Main Copilot and C# workflow rules
 - `README.md` — This file
+
+## 🧑‍💼 What is a chatmode? (Only available to Visual Studio Insiders)
+
+A **chatmode** is a configuration file (in `.github/chatmodes/`) that defines how Copilot or another AI assistant should behave in a specific context or workflow. For example, the `architect` chatmode makes the AI act as an experienced architect and technical lead, focusing on planning, documentation, and Markdown-only outputs. Chatmodes can set the tone, priorities, and constraints for the AI during a session or project.
+
+## 📏 What is an instruction?
+
+An **instruction** is a Markdown file (in `.github/instructions/`) that defines coding rules, architectural standards, and best practices for the project. Instructions are always active and must be followed for all code and documentation generated in the repository. They ensure consistency, maintainability, and alignment with the project's technical vision (e.g., DDD, testing, commit conventions).
+
+## 💡 What is a prompt?
+
+A **prompt** is a template or guidance file (in `.github/prompts/`) used to help Copilot or another AI tool generate code or documentation in a specific style or for a particular use case. Prompts are reusable and can steer the AI in a particular direction for a given task, such as enforcing TDD, writing API documentation, or generating test cases.
 
 ## 🧑‍💻 How to contribute
 
