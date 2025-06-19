@@ -24,6 +24,7 @@ This project provides a set of best practices, coding rules, and prompt instruct
    - Follow the documented standards in your projects.
    - Use these files to configure Copilot or other AI tools for consistent code generation.
 
+
 ## ✨ Features
 
 - 🏛️ Domain-Driven Design (DDD) guidelines ([see instructions](.github/instructions/domain-driven-design.instructions.md))
@@ -33,6 +34,7 @@ This project provides a set of best practices, coding rules, and prompt instruct
 - 🔄 TDD-first workflow for C# (see `copilot-instructions.md`)
 - ❓ Follow-up Question Enforcement ([see instructions](.github/instructions/follow-up-question.instructions.md))  
   AI must ask clarifying questions and show confidence before code generation.
+- 🌐 **Microsoft MCP server integration**: this repository integrates the official Microsoft MCP server to provide real-time access to Microsoft documentation and enhance AI-generated responses ([learn more](https://github.com/MicrosoftDocs/mcp)).
 
 ## 📂 Repository Structure
 
