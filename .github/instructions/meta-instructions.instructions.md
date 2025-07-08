@@ -6,7 +6,7 @@ description: Template and requirements for writing meta-instructions for Copilot
 # Meta-Instruction Template
 
 ## Purpose
-Describe the intent and scope of this instruction meta-prompt. Explain what kind of instructions it is meant to generate or validate (e.g., coding standards, architecture rules, process guidelines).
+Template and requirements for writing meta-instructions for Copilot. Every instruction must include an applyTo and description in its front-matter, and follow the documented structure and best practices.
 
 ## File Naming and Title Conventions
 - Every meta-instruction file must begin with a clear, descriptive title as the first heading (e.g., "Meta-Instruction Template").
@@ -47,7 +47,7 @@ description: Enforces C# coding style and formatting conventions
 # Example Instruction Title
 
 ## Purpose
-Explain the goal of this instruction.
+Explain the goal of this instruction. Describe the intent and scope of this instruction meta-prompt. Explain what kind of instructions it is meant to generate or validate (e.g., coding standards, architecture rules, process guidelines).
 
 ## Rules
 - Rule 1
