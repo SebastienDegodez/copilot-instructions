@@ -35,6 +35,7 @@ This project provides a set of best practices, coding rules, and prompt instruct
 - ❓ Follow-up Question Enforcement ([see instructions](.github/instructions/follow-up-question.instructions.md))  
   AI must ask clarifying questions and show confidence before code generation.
 - 🌐 **Microsoft MCP server integration**: this repository integrates the official Microsoft MCP server to provide real-time access to Microsoft documentation and enhance AI-generated responses ([learn more](https://github.com/MicrosoftDocs/mcp)).
+- 🐶 Husky setup prompts for .NET projects (see `.github/prompts/huskydotnet.prompt.md`)
 
 ## 📂 Repository Structure
 
@@ -60,8 +61,6 @@ A **meta-instruction** is a special instruction file (e.g., `meta-instructions.i
 ## 💡 What is a prompt?
 
 A **prompt** is a template or guidance file (in `.github/prompts/`) used to help Copilot or another AI tool generate code or documentation in a specific style or for a particular use case. Prompts are reusable and can steer the AI in a particular direction for a given task, such as enforcing TDD, writing API documentation, or generating test cases.
-
-> **Note:** No `prompt.md` files are currently available in this repository. Prompt templates will be added in a future update.
 
 ## 🧑‍💻 How to contribute
 
