@@ -1,5 +1,6 @@
 ---
-applyTo: '**/*.cs'
+applyTo: '**/*.{cs,ts,java}'
+description: Enforces Object Calisthenics principles for business domain code to ensure clean, maintainable, and robust code
 ---
 # Object Calisthenics Rules
 
@@ -7,7 +8,17 @@ applyTo: '**/*.cs'
 > Examples may be added later if needed.
 
 ## Objective
-This rule enforces the principles of Object Calisthenics to ensure clean, maintainable, and robust code in the backend.
+This rule enforces the principles of Object Calisthenics to ensure clean, maintainable, and robust code in the backend, **primarily for business domain code**.
+
+## Scope and Application
+- **Primary focus**: Business domain classes (aggregates, entities, value objects, domain services)
+- **Secondary focus**: Application layer services and use case handlers
+- **Exemptions**: 
+  - DTOs (Data Transfer Objects)
+  - API models/contracts
+  - Configuration classes
+  - Simple data containers without business logic
+  - Infrastructure code where flexibility is needed
 
 ## Key Principles
 
@@ -108,7 +119,7 @@ This rule enforces the principles of Object Calisthenics to ensure clean, mainta
 
 4. **First Class Collections**:
    - Use collections to encapsulate data and behavior, rather than exposing raw data structures.
-First Class Collections : une classe qui contient comme attribut un tableau ne doit contenir aucun autre attribut
+First Class Collections: a class that contains an array as an attribute should not contain any other attributes
 
 ```csharp
    // Bad Example - Exposing raw collection
@@ -176,7 +187,7 @@ First Class Collections : une classe qui contient comme attribut un tableau ne d
    - Limit the size of classes and methods to improve code readability and maintainability.
    - Each class should have a single responsibility and be as small as possible.
    
-   Contraints:
+   Constraints:
    - Maximum 10 methods per class
    - Maximum 50 lines per class
    - Maximum 10 classes per package or namespace
@@ -242,17 +253,24 @@ First Class Collections : une classe qui contient comme attribut un tableau ne d
 9. **No Getters/Setters in Domain Classes**:
    - Avoid exposing setters for properties in domain classes.
    - Use private constructors and static factory methods for object creation.
+   - **Note**: This rule applies primarily to domain classes, not DTOs or data transfer objects.
 
    ```csharp
-   // Bad Example
-   public class User {
-       public string Name { get; set; } // Avoid this
+   // Bad Example - Domain class with public setters
+   public class User {  // Domain class
+       public string Name { get; set; } // Avoid this in domain classes
    }
-   // Good Example
-   public class User {
+   
+   // Good Example - Domain class with encapsulation
+   public class User {  // Domain class
        private string name;
        private User(string name) { this.name = name; }
        public static User Create(string name) => new User(name);
+   }
+   
+   // Acceptable Example - DTO with public setters
+   public class UserDto {  // DTO - exemption applies
+       public string Name { get; set; } // Acceptable for DTOs
    }
    ```
 
@@ -260,9 +278,25 @@ First Class Collections : une classe qui contient comme attribut un tableau ne d
 - **Domain Classes**:
   - Use private constructors and static factory methods for creating instances.
   - Avoid exposing setters for properties.
+  - Apply all 9 rules strictly for business domain code.
+
+- **Application Layer**:
+  - Apply these rules to use case handlers and application services.
+  - Focus on maintaining single responsibility and clean abstractions.
+
+- **DTOs and Data Objects**:
+  - Rules 3 (wrapping primitives), 8 (two instance variables), and 9 (no getters/setters) may be relaxed for DTOs.
+  - Public properties with getters/setters are acceptable for data transfer objects.
 
 - **Testing**:
   - Ensure tests validate the behavior of objects rather than their state.
+  - Test classes may have relaxed rules for readability and maintainability.
 
 - **Code Reviews**:
-  - Enforce these rules during code reviews to maintain consistency.
+  - Enforce these rules during code reviews for domain and application code.
+  - Be pragmatic about infrastructure and DTO code.
+
+## References
+- [Object Calisthenics - Original 9 Rules by Jeff Bay](https://www.cs.helsinki.fi/u/luontola/tdd-2009/ext/ObjectCalisthenics.pdf)
+- [ThoughtWorks - Object Calisthenics](https://www.thoughtworks.com/insights/blog/object-calisthenics)
+- [Clean Code: A Handbook of Agile Software Craftsmanship - Robert C. Martin](https://www.oreilly.com/library/view/clean-code-a/9780136083238/)
