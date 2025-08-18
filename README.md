@@ -25,15 +25,17 @@ This project provides a set of best practices, coding rules, and prompt instruct
    - Use these files to configure Copilot or other AI tools for consistent code generation.
 
 
+
 ## ✨ Features
 
 - 🏛️ Domain-Driven Design (DDD) guidelines ([see instructions](.github/instructions/domain-driven-design.instructions.md))
+- 📐 Specification pattern for business rules ([see instructions](.github/instructions/specification-business-rules-csharp.instructions.md))
 - 🧪 Unit & Integration testing best practices ([see instructions](.github/instructions/unit-and-integration-tests.instructions.md))
 - 📝 English-only documentation policy
 - 🤖 Copilot and AI prompt instructions
 - 🔄 TDD-first workflow for C# (see `copilot-instructions.md`)
 - ❓ Follow-up Question Enforcement ([see instructions](.github/instructions/follow-up-question.instructions.md))  
-  AI must ask clarifying questions and show confidence before code generation.
+   AI must ask clarifying questions and show confidence before code generation.
 - 🌐 **Microsoft MCP server integration**: this repository integrates the official Microsoft MCP server to provide real-time access to Microsoft documentation and enhance AI-generated responses ([learn more](https://github.com/MicrosoftDocs/mcp)).
 - 🐶 Husky setup prompts for .NET projects (see `.github/prompts/huskydotnet.prompt.md`)
 
@@ -52,9 +54,10 @@ A **chatmode** is a configuration file (in `.github/chatmodes/`) that defines ho
 A **meta-chatmode** is a special chatmode file (e.g., `meta-chatmode.instructions.md`) that defines how to write, structure, and validate other chatmode files. Meta-chatmodes ensure that all chatmodes follow a consistent format and best practices across the repository. They specify the required file structure, naming conventions, expected behavior, and validation checklist for chatmode files. 
 
 
+
 ## 📏 What is an instruction?
 
-An **instruction** is a Markdown file (in `.github/instructions/`) that defines coding rules, architectural standards, and best practices for the project. Instructions are always active and must be followed for all code and documentation generated in the repository. They ensure consistency, maintainability, and alignment with the project's technical vision (e.g., DDD, testing, commit conventions).
+An **instruction** is a Markdown file (in `.github/instructions/`) that defines coding rules, architectural standards, and best practices for the project. Instructions are always active and must be followed for all code and documentation generated in the repository. They ensure consistency, maintainability, and alignment with the project's technical vision (e.g., DDD, specification pattern, testing, commit conventions).
 
 A **meta-instruction** is a special instruction file (e.g., `meta-instructions.instructions.md`) that defines how to write, structure, and validate other instruction files. Meta-instructions ensure that all instructions follow a consistent format and best practices across the repository.
 
