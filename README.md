@@ -33,9 +33,12 @@ This project provides a set of best practices, coding rules, and prompt instruct
 - 🤖 Copilot and AI prompt instructions
 - 🔄 TDD-first workflow for C# (see `copilot-instructions.md`)
 - ❓ Follow-up Question Enforcement ([see instructions](.github/instructions/follow-up-question.instructions.md))  
-  AI must ask clarifying questions and show confidence before code generation.
+   AI must ask clarifying questions and show confidence before code generation.
 - 🌐 **Microsoft MCP server integration**: this repository integrates the official Microsoft MCP server to provide real-time access to Microsoft documentation and enhance AI-generated responses ([learn more](https://github.com/MicrosoftDocs/mcp)).
 - 🐶 Husky setup prompts for .NET projects (see `.github/prompts/huskydotnet.prompt.md`)
+- 🤡 Microcks metadata instructions for API Mock and contract testing:
+   - [GroovyScript metadata rules](.github/instructions/microcks-metadata-groovyscript.instructions.md)
+   - [JSON body metadata rules](.github/instructions/microcks-metadata-jsonbody.instructions.md)
 
 ## 📂 Repository Structure
 
