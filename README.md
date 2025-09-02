@@ -40,6 +40,8 @@ This project provides a set of best practices, coding rules, and prompt instruct
    - [GroovyScript metadata rules](.github/instructions/microcks-metadata-groovyscript.instructions.md)
    - [JSON body metadata rules](.github/instructions/microcks-metadata-jsonbody.instructions.md)
 
+> [![Watch the video](https://img.youtube.com/vi/QIoorNhYm3s/maxresdefault.jpg)](https://youtu.be/QIoorNhYm3s)
+
 ## 📂 Repository Structure
 
 - `.github/instructions/` — All coding rules and best practices (Markdown)
