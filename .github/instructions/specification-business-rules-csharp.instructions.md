@@ -22,6 +22,47 @@ Define how to properly encapsulate business rules and invariants within aggregat
 - **Prefer existing specification interfaces** from shared kernel or domain libraries before creating custom ones.
 - **Do not use** Specification for simple field validation or basic invariants.
 
+## CRITICAL: Complete Implementation Requirements
+When implementing the Specification pattern, you MUST provide:
+
+### 1. Complete Implementation Chain
+- ✅ The specification classes themselves (e.g., ActivePolicySpecification)
+- ✅ A concrete repository implementation showing `FindBySpecificationAsync()` usage
+- ✅ Actual usage in query handlers/use cases with specification instantiation
+- ✅ Usage examples demonstrating combinations (AND, OR, NOT)
+
+### 2. Repository Integration
+- Repository MUST have `FindBySpecificationAsync(ISpecification<T> spec)` method
+- Show the actual filtering logic using `specification.IsSatisfiedBy(entity)`
+- Other specific methods SHOULD internally delegate to specifications:
+  ```csharp
+  public async Task<IReadOnlyCollection<Trip>> FindAvailableTripsForPeriodAsync(
+      DateTime startDate, DateTime endDate, CancellationToken ct = default)
+  {
+      var spec = new TripAvailableInPeriodSpecification(startDate, endDate);
+      return await FindBySpecificationAsync(spec, ct);
+  }
+  ```
+
+### 3. Query Handler / Use Case Usage
+Query handlers MUST explicitly instantiate and use specifications:
+```csharp
+// ✅ CORRECT: Shows specification pattern in action
+var specification = new TripAvailableInPeriodSpecification(startDate, endDate);
+var trips = await _repository.FindBySpecificationAsync(specification, ct);
+
+// ❌ WRONG: Hides the specification usage
+var trips = await _repository.FindAvailableTripsForPeriodAsync(startDate, endDate, ct);
+```
+
+### 4. Mandatory Usage Examples File
+Create a `UsageExample.cs` or `SpecificationExamples.cs` showing:
+- Simple single specification usage
+- Combined specifications using AND
+- Combined specifications using OR
+- NOT operator usage
+- Integration with repository calls
+
 ## Best Practices
 - Keep aggregates small and focused on business consistency.
 - Name specifications and business methods using ubiquitous language.
@@ -64,25 +105,26 @@ public interface ISpecification<T>
 }
 
 // Complex business rule with static method
-public sealed class CustomerEligibleForDiscountSpecification : ISpecification<Customer>
+public sealed class TripEligibleForPromotionSpecification : ISpecification<Trip>
 {
-    public bool IsSatisfiedBy(Customer customer) =>
-        customer.IsActive && 
-        customer.TotalOrdersAmount > 1000m && 
-        customer.MembershipLevel == MembershipLevel.Premium;
+    public bool IsSatisfiedBy(Trip trip) =>
+        trip.IsAvailable && 
+        trip.AvailableSeats >= 5 && 
+        trip.DepartureDate > DateTime.UtcNow.AddDays(30) &&
+        trip.Destination.IsPopular;
 
     // Static method for direct usage
-    public static bool IsSatisfiedBy(Customer customer) =>
-        new CustomerEligibleForDiscountSpecification().IsSatisfiedBy(customer);
+    public static bool IsSatisfiedBy(Trip trip) =>
+        new TripEligibleForPromotionSpecification().IsSatisfiedBy(trip);
 }
 
 // Aggregate using specification
-public sealed class Order
+public sealed class Booking
 {
-    public void ApplyDiscount(Customer customer)
+    public void ApplyPromotionalDiscount(Trip trip)
     {
-        if (!CustomerEligibleForDiscountSpecification.IsSatisfiedBy(customer))
-            throw new InvalidOperationException("Customer is not eligible for discount");
+        if (!TripEligibleForPromotionSpecification.IsSatisfiedBy(trip))
+            throw new InvalidOperationException("Trip is not eligible for promotional discount");
         
         // Apply discount logic...
     }
@@ -92,20 +134,37 @@ public sealed class Order
 ### Combined Specifications (Advanced Pattern)
 ```csharp
 // Base specifications
-public sealed class CustomerIsActiveSpecification : ISpecification<Customer>
+public sealed class TripIsAvailableSpecification : ISpecification<Trip>
 {
-    public bool IsSatisfiedBy(Customer customer) => customer.IsActive;
+    public bool IsSatisfiedBy(Trip trip) => trip.IsAvailable;
     
-    public static bool IsSatisfiedBy(Customer customer) =>
-        new CustomerIsActiveSpecification().IsSatisfiedBy(customer);
+    public static bool IsSatisfiedBy(Trip trip) =>
+        new TripIsAvailableSpecification().IsSatisfiedBy(trip);
 }
 
-public sealed class CustomerHasMinimumOrdersSpecification : ISpecification<Customer>
+public sealed class TripHasMinimumSeatsSpecification : ISpecification<Trip>
 {
-    public bool IsSatisfiedBy(Customer customer) => customer.TotalOrdersAmount > 1000m;
+    private readonly int _minimumSeats;
     
-    public static bool IsSatisfiedBy(Customer customer) =>
-        new CustomerHasMinimumOrdersSpecification().IsSatisfiedBy(customer);
+    public TripHasMinimumSeatsSpecification(int minimumSeats)
+    {
+        _minimumSeats = minimumSeats;
+    }
+    
+    public bool IsSatisfiedBy(Trip trip) => trip.AvailableSeats >= _minimumSeats;
+}
+
+public sealed class TripDepartsSoonSpecification : ISpecification<Trip>
+{
+    private readonly int _daysBeforeDeparture;
+    
+    public TripDepartsSoonSpecification(int daysBeforeDeparture)
+    {
+        _daysBeforeDeparture = daysBeforeDeparture;
+    }
+    
+    public bool IsSatisfiedBy(Trip trip) => 
+        trip.DepartureDate <= DateTime.UtcNow.AddDays(_daysBeforeDeparture);
 }
 
 // Combinable specifications
@@ -125,18 +184,22 @@ public sealed class AndSpecification<T> : ISpecification<T>
 }
 
 // Aggregate using combined specifications
-public sealed class Order
+public sealed class Booking
 {
-    public void ApplyPremiumDiscount(Customer customer)
+    public void ApplyLastMinuteDiscount(Trip trip)
     {
-        var isActive = new CustomerIsActiveSpecification();
-        var hasMinimumOrders = new CustomerHasMinimumOrdersSpecification();
-        var combinedSpec = new AndSpecification<Customer>(isActive, hasMinimumOrders);
+        var isAvailable = new TripIsAvailableSpecification();
+        var hasMinimumSeats = new TripHasMinimumSeatsSpecification(5);
+        var departsSoon = new TripDepartsSoonSpecification(7);
         
-        if (!combinedSpec.IsSatisfiedBy(customer))
-            throw new InvalidOperationException("Customer does not meet premium discount criteria");
+        var combinedSpec = new AndSpecification<Trip>(
+            new AndSpecification<Trip>(isAvailable, hasMinimumSeats),
+            departsSoon);
         
-        // Apply premium discount logic...
+        if (!combinedSpec.IsSatisfiedBy(trip))
+            throw new InvalidOperationException("Trip does not meet last-minute discount criteria");
+        
+        // Apply last-minute discount logic...
     }
 }
 ```
