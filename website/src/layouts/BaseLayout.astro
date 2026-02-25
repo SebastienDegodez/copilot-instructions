@@ -1,0 +1,31 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title} | Copilot Instructions</title>
+    <style is:global>
+      @import '../styles/global.css';
+    </style>
+  </head>
+  <body>
+    <header class="bg-blue-600 text-white p-6">
+      <h1 class="text-3xl font-bold">Copilot Instructions</h1>
+    </header>
+    <main class="max-w-6xl mx-auto p-6">
+      <h2 class="text-2xl font-bold mb-4">{title}</h2>
+      <slot />
+    </main>
+    <footer class="bg-gray-800 text-white p-6 mt-12">
+      <p>&copy; 2026 Copilot Instructions. Licensed under MIT.</p>
+    </footer>
+  </body>
+</html>
