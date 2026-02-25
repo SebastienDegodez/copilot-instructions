@@ -5,8 +5,7 @@ Always signed commit messages are required for all commits.
 ## Language Policy
 
 All instructions and prompts in this repository must be written in English. This applies to:
-- All rule and instruction files in `.github/instructions/`
-- All prompt files in `.github/prompts/`
+- All rule and instruction files in `instructions/`
 - All documentation and code comments intended for contributors
 
 ## Development code generation
