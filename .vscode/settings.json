@@ -1,9 +1,21 @@
 {
-    "chat.promptFiles": true,
-    "chat.promptFilesLocations": {
-        ".github/prompts": true
-    },
     "chat.instructionsFilesLocations": {
         ".github/instructions": true
+    },
+    "chat.agentSkillsLocations": {
+        ".github/skills": true,
+        "~/.copilot/installed-plugins/superpowers-marketplace/superpowers/skills": true
+    },
+    "chat.agentFilesLocations": {
+        ".github/agents": true,
+        "~/.copilot/installed-plugins/superpowers-marketplace/superpowers/agents": true
+    },
+    // "chat.promptFilesLocations": {
+    //     ".github/prompts": true,
+    //     "~/.copilot/installed-plugins/superpowers-marketplace/superpowers/commands": true
+    // },
+    "chat.hookFilesLocations": {
+        ".github/hooks": true,
+        "~/.copilot/installed-plugins/superpowers-marketplace/superpowers/hooks": true
     }
 }

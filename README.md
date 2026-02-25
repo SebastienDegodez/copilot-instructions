@@ -49,6 +49,7 @@ This project provides a set of best practices, coding rules, and prompt instruct
 - `.github/instructions/` — All coding rules and best practices (Markdown)
 - `.github/prompts/` — Prompt files for Copilot and AI tools
 - `.github/chatmodes/` — Chatmode files to configure Copilot/AI behavior (e.g. `architect`)
+- `.github/skills/` — Modular skills that extend Copilot capabilities (see below)
 - `collections/` — Collections of reusable primitives for APM
 - `scripts/` — Utility scripts (validation, automation)
 - `.github/copilot-instructions.md` — Main Copilot and C# workflow rules
@@ -84,6 +85,16 @@ A **meta-instruction** is a special instruction file (e.g., `meta-instructions.i
 ## 💡 What is a prompt?
 
 A **prompt** is a template or guidance file (in `.github/prompts/`) used to help Copilot or another AI tool generate code or documentation in a specific style or for a particular use case. Prompts are reusable and can steer the AI in a particular direction for a given task, such as enforcing TDD, writing API documentation, or generating test cases.
+
+## 🎯 What is a skill?
+
+A **skill** is a modular, self-contained package (in `.github/skills/`) that extends GitHub Copilot's capabilities with specialized knowledge, workflows, and tools. Skills act as "onboarding guides" for specific domains or tasks, transforming Copilot into a specialized agent.
+
+### Available Skills
+
+- **clean-architecture-dotnet**: Complete guide for Clean Architecture with DDD and CQRS (no MediatR), including project initialization scripts and ArchUnit validation
+- **application-layer-testing**: Testing Application layer handlers with sociable testing strategy (real Domain objects, mocked Infrastructure)
+- **skill-creator**: Create and manage GitHub Copilot skills
 
 ## 🧑‍💻 How to contribute
 

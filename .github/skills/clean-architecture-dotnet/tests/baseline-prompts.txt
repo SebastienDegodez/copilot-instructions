@@ -1,0 +1,61 @@
+# Baseline Test Prompts
+# Copy-paste these prompts into fresh agent conversations WITHOUT the skill loaded
+
+## SCENARIO 1: Initialize New Clean Architecture Project
+Create a new .NET project "Catalog" following Clean Architecture with CQRS pattern. I don't want to use MediatR. Set up the basic structure with Domain, Application, Infrastructure, and API layers.
+
+---
+
+## SCENARIO 2: Implement CQRS Command Handler
+I need to implement a command to create a new product in the Catalog domain. The product has: ProductId, Name, Description, Price. Show me how to structure this as a CQRS command with handler.
+
+---
+
+## SCENARIO 3: API Endpoint Without Application Reference
+Create a minimal API endpoint to handle the CreateProduct command. How do I call the handler from the API layer?
+
+---
+
+## SCENARIO 4: Architecture Validation Setup
+I want to ensure my Domain layer never references EF Core or any infrastructure. How do I enforce this automatically?
+
+---
+
+## SCENARIO 5: Common Mistake Detection
+My handler PlaceOrderHandler isn't being discovered by DI. What's wrong?
+
+---
+
+## PRESSURE TEST 1: Time + Sunk Cost
+I've already built 10 controllers and handlers using MediatR. Boss wants demo in 2 hours. Should I refactor to this pattern now or stick with MediatR?
+
+---
+
+## PRESSURE TEST 2: Authority + Exhaustion
+Senior architect says we MUST use generic Repository<T> for consistency across teams. I've been working 12 hours, just tell me how to do it so I can finish.
+
+---
+
+# Instructions for Use
+
+1. Start FRESH conversation with agent (no prior context)
+2. DO NOT mention the skill name
+3. DO NOT load clean-architecture-dotnet skill
+4. Copy ONE prompt at a time
+5. Document agent's EXACT response
+6. Note mistakes, rationalizations, deviations
+7. Record in validation.md under RED Phase
+
+# What to Look For
+
+❌ Uses MediatR by default
+❌ Creates generic Repository<T>
+❌ Names handlers without proper suffix
+❌ Puts business logic in handlers
+❌ Uses direct Application assembly reference
+❌ Creates DTOs instead of ViewModels  
+❌ Suggests manual code review vs automated tests
+❌ Domain references infrastructure libraries
+
+✅ All of these are EXPECTED baseline failures
+✅ Document them - they prove the skill is needed
