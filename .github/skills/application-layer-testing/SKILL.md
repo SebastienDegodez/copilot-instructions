@@ -1,11 +1,11 @@
 ---
-name: ddd-sociable-testing
-description: Guide for implementing CQRS features with DDD and sociable testing in C#. Use when implementing new features (Commands/Queries), creating test classes for Application layer handlers, or applying sociable testing strategy where Domain objects are tested through Application layer with real collaborators and only Infrastructure is mocked. Focus on fast unit tests without Testcontainers.
+name: application-layer-testing
+description: Guide for testing Application layer handlers using sociable testing strategy in C#. Use when writing tests for CQRS handlers (Commands/Queries), testing use case orchestration, or validating business logic through Application layer with real Domain objects and mocked Infrastructure. Focus on fast, maintainable unit tests without Testcontainers.
 ---
 
-# DDD Sociable Testing
+# Application Layer Testing
 
-Guide for implementing CQRS features using DDD principles with Martin Fowler's sociable testing approach in C#.
+Guide for testing Application layer handlers using Martin Fowler's sociable testing approach in Clean Architecture projects with DDD and CQRS.
 
 ## Core Philosophy
 

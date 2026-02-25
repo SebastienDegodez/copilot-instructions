@@ -75,6 +75,8 @@ A **skill** is a modular, self-contained package (in `.github/skills/`) that ext
 
 ### Available Skills
 
+- **clean-architecture-dotnet**: Complete guide for Clean Architecture with DDD and CQRS (no MediatR), including project initialization scripts and ArchUnit validation
+- **application-layer-testing**: Testing Application layer handlers with sociable testing strategy (real Domain objects, mocked Infrastructure)
 - **skill-creator**: Create and manage GitHub Copilot skills
 
 ## 🧑‍💻 How to contribute
