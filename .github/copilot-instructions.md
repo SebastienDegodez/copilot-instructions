@@ -1,5 +1,7 @@
 # Copilot instructions
 
+Always signed commit messages are required for all commits.
+
 ## Language Policy
 
 All instructions and prompts in this repository must be written in English. This applies to:
