@@ -16,10 +16,12 @@ This project provides a set of best practices, coding rules, and prompt instruct
    ```sh
    git clone https://github.com/your-username/copilot-instructions.git
    ```
-2. **Explore the instructions**  
-   - Check the `.github/instructions/` folder for coding rules and best practices.
-   - Review prompt files in `.github/prompts/` for AI guidance.
-   - Read the `copilot-instructions.md` file for Copilot-specific and C#-specific workflow rules.
+2. **Explore the repository**
+   - Check `instructions/` for coding rules and best practices
+   - Review `skills/` for specialized capabilities and bundled resources
+   - Browse `agents/` for custom AI personas
+   - Install plugins from `plugins/` for curated collections
+   - Visit `website/` for interactive documentation
 3. **Apply the rules**  
    - Follow the documented standards in your projects.
    - Use these files to configure Copilot or other AI tools for consistent code generation.
@@ -44,16 +46,43 @@ This project provides a set of best practices, coding rules, and prompt instruct
 
 > [![Watch the video](https://img.youtube.com/vi/QIoorNhYm3s/maxresdefault.jpg)](https://youtu.be/QIoorNhYm3s)
 
+## 🎯 Repository Approach
+
+This repository follows the [awesome-copilot](https://github.com/github/awesome-copilot) structure and conventions for organizing instructions, skills, agents, and plugins to enhance GitHub Copilot capabilities.
+
+### Key Concepts
+
+- **Instructions**: Coding standards and best practices that apply to specific file patterns
+- **Skills**: Self-contained capabilities that bundle SKILL.md files with related resources
+- **Agents**: Custom AI personas for specialized workflows
+- **Plugins**: Installable packages that bundle related skills and agents
+
 ## 📂 Repository Structure
 
-- `.github/instructions/` — All coding rules and best practices (Markdown)
-- `.github/prompts/` — Prompt files for Copilot and AI tools
-- `.github/chatmodes/` — Chatmode files to configure Copilot/AI behavior (e.g. `architect`)
-- `.github/skills/` — Modular skills that extend Copilot capabilities (see below)
-- `collections/` — Collections of reusable primitives for APM
-- `scripts/` — Utility scripts (validation, automation)
-- `.github/copilot-instructions.md` — Main Copilot and C# workflow rules
-- `README.md` — This file
+```
+├── instructions/          # Coding standards and best practices (.instructions.md)
+├── agents/               # Custom AI agents (.agent.md)
+├── skills/               # Self-contained capabilities with bundled resources
+├── plugins/              # Installable packages bundling related agents and skills
+│   └── csharp-clean-architecture-development/
+├── website/              # Astro static documentation site
+├── docs/                 # Documentation and implementation plans
+├── .github/
+│   └── workflows/        # GitHub Actions for deployment and automation
+└── README.md
+```
+
+## 🔌 Plugins
+
+### C# Clean Architecture Development
+
+Comprehensive plugin for C# developers with DDD, Clean Architecture, CQRS, and testing best practices.
+
+- **Location**: `plugins/csharp-clean-architecture-development/`
+- **Skills**: application-layer-testing, clean-architecture-dotnet
+- **Installation**: See plugin README for details
+
+See [plugins/](plugins/) for more available plugins.
 
 ## 📦 What is a collection?
 
