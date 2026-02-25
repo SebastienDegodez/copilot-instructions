@@ -1,0 +1,56 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DetailLayout from '../../layouts/DetailLayout.astro';
+
+export async function getStaticPaths() {
+  const skills = await getCollection('skills');
+  return skills.map((skill) => {
+    // The skill.id is in format "skill-name/SKILL", we want just "skill-name"
+    const slug = skill.id.split('/')[0];
+    return {
+      params: { slug },
+      props: { skill },
+    };
+  });
+}
+
+interface Props {
+  skill: any;
+}
+
+const { skill } = Astro.props;
+
+// Function to format skill slug to readable name
+function formatSkillName(slug: string): string {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+const { Content } = await render(skill);
+const title = skill.data.name || formatSkillName(skill.id);
+const description = skill.data.description;
+---
+
+<BaseLayout title={title}>
+  <div class="space-y-6">
+    <a
+      href="/copilot-instructions/skills/"
+      class="inline-block text-blue-600 hover:text-blue-800 font-semibold mb-4"
+    >
+      ← Back to Skills
+    </a>
+
+    {description && (
+      <p class="text-gray-600 text-lg mb-6">
+        {description}
+      </p>
+    )}
+
+    <article class="prose prose-sm sm:prose lg:prose-lg max-w-none">
+      <Content />
+    </article>
+  </div>
+</BaseLayout>

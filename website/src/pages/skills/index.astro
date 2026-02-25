@@ -1,0 +1,60 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const skills = await getCollection('skills');
+
+// Sort skills alphabetically by directory name
+const sortedSkills = skills.sort((a, b) => a.id.localeCompare(b.id));
+
+// Function to format skill slug to readable name
+function formatSkillName(slug: string): string {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+---
+
+<BaseLayout title="Skills">
+  <div class="space-y-6">
+    <div class="bg-blue-50 p-6 rounded-lg">
+      <p class="text-lg text-gray-700">
+        Explore specialized capabilities with bundled resources for implementing advanced features and patterns.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {
+        sortedSkills.map((skill) => {
+          // skill.id is in format "skill-name/SKILL", extract just "skill-name"
+          const skillSlug = skill.id.split('/')[0];
+          return (
+          <a
+            href={`/copilot-instructions/skills/${skillSlug}/`}
+            class="border border-gray-300 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block"
+          >
+            <h3 class="text-xl font-bold mb-2 text-blue-600">
+              {formatSkillName(skillSlug)}
+            </h3>
+            {skill.data.description && (
+              <p class="text-gray-600 text-sm">
+                {skill.data.description}
+              </p>
+            )}
+            {skill.data.tags && skill.data.tags.length > 0 && (
+              <div class="mt-4 flex flex-wrap gap-2">
+                {skill.data.tags.map((tag) => (
+                  <span class="inline-block bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </a>
+          );
+        })
+      }
+    </div>
+  </div>
+</BaseLayout>

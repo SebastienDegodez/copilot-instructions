@@ -1,0 +1,56 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const instructions = await getCollection('instructions');
+
+// Sort instructions alphabetically by slug
+const sortedInstructions = instructions.sort((a, b) => a.id.localeCompare(b.id));
+
+// Function to format instruction slug to readable name
+function formatInstructionName(slug: string): string {
+  // Remove .instructions suffix if present
+  const cleanSlug = slug.replace(/\.instructions$/, '');
+  return cleanSlug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+---
+
+<BaseLayout title="Instructions">
+  <div class="space-y-6">
+    <div class="bg-blue-50 p-6 rounded-lg">
+      <p class="text-lg text-gray-700">
+        Coding standards and best practices for your projects.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {
+        sortedInstructions.map((instruction) => (
+          <a
+            href={`/copilot-instructions/instructions/${instruction.id}/`}
+            class="border border-gray-300 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block"
+          >
+            <h3 class="text-xl font-bold mb-2 text-blue-600">
+              {formatInstructionName(instruction.id)}
+            </h3>
+            {instruction.data.description && (
+              <p class="text-gray-600 text-sm mb-3">
+                {instruction.data.description}
+              </p>
+            )}
+            {instruction.data.applyTo && (
+              <div class="mt-auto">
+                <span class="inline-block bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-xs">
+                  {instruction.data.applyTo}
+                </span>
+              </div>
+            )}
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

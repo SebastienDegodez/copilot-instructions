@@ -1,0 +1,63 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const agents = await getCollection('agents');
+  return agents.map((agent) => ({
+    params: { slug: agent.id },
+    props: { agent },
+  }));
+}
+
+interface Props {
+  agent: any;
+}
+
+const { agent } = Astro.props;
+
+// Function to format agent slug to readable name
+function formatAgentName(slug: string): string {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+const { Content } = await render(agent);
+const title = agent.data.name || formatAgentName(agent.id);
+const description = agent.data.description;
+---
+
+<BaseLayout title={title}>
+  <div class="space-y-6">
+    <a
+      href="/copilot-instructions/agents/"
+      class="inline-block text-blue-600 hover:text-blue-800 font-semibold mb-4"
+    >
+      ← Back to Agents
+    </a>
+
+    {description && (
+      <div class="bg-blue-50 p-6 rounded-lg mb-6">
+        <p class="text-gray-700 text-lg">
+          {description}
+        </p>
+      </div>
+    )}
+
+    {agent.data.tags && agent.data.tags.length > 0 && (
+      <div class="flex flex-wrap gap-2 mb-6">
+        {agent.data.tags.map((tag) => (
+          <span class="inline-block bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm">
+            {tag}
+          </span>
+        ))}
+      </div>
+    )}
+
+    <article class="prose prose-sm sm:prose lg:prose-lg max-w-none">
+      <Content />
+    </article>
+  </div>
+</BaseLayout>
