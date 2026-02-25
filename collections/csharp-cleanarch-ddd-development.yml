@@ -1,0 +1,26 @@
+id: csharp-cleanarch-ddd-development
+name: C# Clean Architecture & DDD Development
+description: Essential prompts, instructions and chatmodes for C# and .NET with clean architecture and domain-driven design (DDD) principles.
+tags: [csharp, dotnet, clean-architecture, ddd, domain-driven-design, microservices, software-development]
+items:
+  - path: .github/instructions/follow-up-question.instructions.md
+    kind: instruction
+  # general development instructions
+  - path: .github/instructions/coding-style-csharp.instructions.md
+    kind: instruction
+  # clean architecture and ddd instructions
+  - path: .github/instructions/clean-architecture.instructions.md
+    kind: instruction
+  - path: .github/instructions/domain-driven-design.instructions.md
+    kind: instruction
+  - path: .github/instructions/domain-driven-design-event-csharp.instructions.md
+    kind: instruction
+  - path: .github/instructions/command-cqrs-csharp.instructions.md
+    kind: instruction
+  - path: .github/instructions/query-cqrs-csharp.instructions.md
+    kind: instruction
+  - path: .github/instructions/object-calisthenics.instructions.md
+    kind: instruction
+display:
+  show_badge: false
+  ordering: alpha

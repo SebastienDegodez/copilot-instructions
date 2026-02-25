@@ -30,6 +30,7 @@ This project provides a set of best practices, coding rules, and prompt instruct
 - 🏛️ Domain-Driven Design (DDD) guidelines ([see instructions](.github/instructions/domain-driven-design.instructions.md))
 - 📐 Specification pattern for business rules ([see instructions](.github/instructions/specification-business-rules-csharp.instructions.md))
 - 🧪 Unit & Integration testing best practices ([see instructions](.github/instructions/unit-and-integration-tests.instructions.md))
+- 🗂️ Command/Query (CQS/CQRS) best practices ([see command instructions](.github/instructions/command-cqs-csharp.instructions.md), [see query instructions](.github/instructions/query-cqs-csharp.instructions.md))
 - 📝 English-only documentation policy
 - 🤖 Copilot and AI prompt instructions
 - 🔄 TDD-first workflow for C# (see `copilot-instructions.md`)
@@ -49,8 +50,24 @@ This project provides a set of best practices, coding rules, and prompt instruct
 - `.github/prompts/` — Prompt files for Copilot and AI tools
 - `.github/chatmodes/` — Chatmode files to configure Copilot/AI behavior (e.g. `architect`)
 - `.github/skills/` — Modular skills that extend Copilot capabilities (see below)
+- `collections/` — Collections of reusable primitives for APM
+- `scripts/` — Utility scripts (validation, automation)
 - `.github/copilot-instructions.md` — Main Copilot and C# workflow rules
 - `README.md` — This file
+
+## 📦 What is a collection?
+
+A **collection** is a YAML file (in `collections/`) that groups related instructions, prompts, and chatmodes into a reusable package. Collections are designed to be consumed by **APM (Agent Package Manager)** to provide "primitives" for AI agents.
+
+### Using collections with APM
+
+[APM](https://github.com/danielmeppiel/apm) allows you to easily install and manage these collections in your projects. Instead of manually copying instruction files, you can use APM to:
+
+- Install a curated set of instructions for a specific technology stack
+- Keep your AI primitives up-to-date across multiple projects
+- Share best practices with your team
+
+![APM Demo](https://github.com/danielmeppiel/apm/raw/main/docs/apm-demo.gif)
 
 ## 🧑‍💼 What is a chatmode? 
 
@@ -87,9 +104,8 @@ Feel free to open issues or submit pull requests to improve the rules, add new p
 ---
 
 > ⚡ **Coming soon:**
-> - A hands-on workshop to help you understand and build AI-powered solutions step by step!
 > - Rules and best practices for API endpoints, feature slicing, and observability.
-> - The [microcks-aspire-dotnet-demo](https://github.com/SebastienDegodez/microcks-aspire-dotnet-demo) repository is the official demo and testbed for these rules and practices.
+> - The [microcks-aspire-dotnet-demo](https://github.com/microcks/microcks-aspire-demo) repository is the official demo and testbed for these rules and practices.
 
 Happy coding! 💡✨  
 If you have any questions, don’t hesitate to open an issue or reach out.
