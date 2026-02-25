@@ -1,0 +1,91 @@
+name: Update README Statistics
+
+on:
+  # Trigger when content directories change
+  push:
+    branches: [main]
+    paths:
+      - 'instructions/**'
+      - 'skills/**'
+      - 'agents/**'
+      - 'plugins/**'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    name: Update README with Content Statistics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Count files and update README
+        run: |
+          # Count files in each directory
+          SKILLS_COUNT=$(find skills -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+          INSTRUCTIONS_COUNT=$(find instructions -type f -name "*.instructions.md" | wc -l | tr -d ' ')
+          AGENTS_COUNT=$(find agents -type f -name "*.agent.md" | wc -l | tr -d ' ')
+          PLUGINS_COUNT=$(find plugins -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+          
+          echo "📊 Content Statistics:"
+          echo "  Skills: $SKILLS_COUNT"
+          echo "  Instructions: $INSTRUCTIONS_COUNT"
+          echo "  Agents: $AGENTS_COUNT"
+          echo "  Plugins: $PLUGINS_COUNT"
+          
+          # Create statistics section using heredoc
+          cat > stats.tmp << EOF
+          ## 📊 Repository Statistics
+          
+          This repository contains:
+          - **${SKILLS_COUNT}** Skills
+          - **${INSTRUCTIONS_COUNT}** Instructions
+          - **${AGENTS_COUNT}** Agents
+          - **${PLUGINS_COUNT}** Plugins
+          
+          _Last updated: $(date +'%Y-%m-%d %H:%M:%S UTC')_
+          EOF
+          
+          # Check if statistics section exists in README
+          if grep -q "## 📊 Repository Statistics" README.md; then
+            # Update existing section (replace from marker to next ## or end of file)
+            awk '
+              /## 📊 Repository Statistics/ {
+                while ((getline line < "stats.tmp") > 0) print line
+                skip=1
+                next
+              }
+              /^## / && skip {
+                skip=0
+              }
+              !skip
+            ' README.md > README.tmp && mv README.tmp README.md
+          else
+            # Append to end of README if section doesn't exist
+            echo "" >> README.md
+            cat stats.tmp >> README.md
+          fi
+          
+          # Cleanup
+          rm -f stats.tmp
+      
+      - name: Check for changes
+        id: verify-diff
+        run: |
+          git diff --quiet README.md || echo "changed=true" >> $GITHUB_OUTPUT
+      
+      - name: Commit changes
+        if: steps.verify-diff.outputs.changed == 'true'
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md
+          git commit -m "docs: update README statistics [skip ci]"
+          git push
