@@ -10,28 +10,28 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         A comprehensive repository of coding standards, skills, instructions, and agents to enhance your GitHub Copilot experience.
       </p>
       <div class="flex gap-4">
-        <a href="/copilot-instructions/skills/" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-900 transition">Browse Skills</a>
-        <a href="/copilot-instructions/instructions/" class="bg-orange-500 text-white px-6 py-3 rounded hover:bg-yellow-700 transition">View Instructions</a>
+        <a href={`${import.meta.env.BASE_URL}skills/`} class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-900 transition">Browse Skills</a>
+        <a href={`${import.meta.env.BASE_URL}instructions/`} class="bg-orange-500 text-white px-6 py-3 rounded hover:bg-yellow-700 transition">View Instructions</a>
       </div>
     </section>
 
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="border border-gray-300 p-6 rounded-lg">
+      <a href={`${import.meta.env.BASE_URL}skills/`} class="border border-gray-300 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block">
         <h3 class="text-xl font-bold mb-2">📚 Skills</h3>
         <p class="text-gray-700">Self-contained capabilities with bundled resources for specialized tasks.</p>
-      </div>
-      <div class="border border-gray-300 p-6 rounded-lg">
+      </a>
+      <a href={`${import.meta.env.BASE_URL}instructions/`} class="border border-gray-300 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block">
         <h3 class="text-xl font-bold mb-2">📋 Instructions</h3>
         <p class="text-gray-700">Coding standards and best practices that apply to your projects.</p>
-      </div>
-      <div class="border border-gray-300 p-6 rounded-lg">
+      </a>
+      <a href={`${import.meta.env.BASE_URL}agents/`} class="border border-gray-300 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block">
         <h3 class="text-xl font-bold mb-2">🤖 Agents</h3>
         <p class="text-gray-700">Custom AI personas for specialized workflows and domains.</p>
-      </div>
-      <div class="border border-gray-300 p-6 rounded-lg">
+      </a>
+      <a href={`${import.meta.env.BASE_URL}plugins/`} class="border border-gray-300 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block">
         <h3 class="text-xl font-bold mb-2">🔌 Plugins</h3>
         <p class="text-gray-700">Installable packages bundling related skills and agents.</p>
-      </div>
+      </a>
     </section>
   </div>
 </BaseLayout>

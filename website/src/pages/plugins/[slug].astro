@@ -38,7 +38,7 @@ try {slug
 <BaseLayout title={plugin.data.name}>
   <div class="space-y-6">
     <a
-      href="/copilot-instructions/plugins/"
+      href={`${import.meta.env.BASE_URL}plugins/`}
       class="inline-block text-blue-600 hover:text-blue-800 font-semibold mb-4"
     >
       ← Back to Plugins
@@ -88,15 +88,15 @@ try {slug
     </div>
 
     <div class="bg-white border border-gray-200 p-6 rounded-lg">
-      <h2 class="text-2xl font-bold mb-4 text-gray-900">Installation</h2>
-      <div class="bg-gray-50 p-4 rounded border border-gray-300 mb-4">
-        <code class="text-sm text-gray-800">
-          # Copy the plugin directory to your workspace<br />
-          cp -r plugins/{slug} /path/to/your/workspace/plugins/
+      <h2 class="text-2xl font-bold mb-4 text-gray-900">📦 Installation</h2>
+      <div class="bg-gray-900 p-4 rounded-lg mb-4">
+        <code class="text-sm font-mono text-green-400 block">
+          <span class="text-gray-500"># Copy the plugin directory to your workspace</span><br />
+          <span class="text-yellow-300">cp -r</span> plugins/{slug} /path/to/your/workspace/plugins/
         </code>
       </div>
       <p class="text-gray-600 text-sm">
-        After copying, the plugin skills and configurations will be available in your GitHub Copilot environment.
+        💡 After copying, the plugin skills and configurations will be available in your GitHub Copilot environment.
       </p>
     </div>
 

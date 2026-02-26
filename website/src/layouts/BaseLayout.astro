@@ -18,7 +18,17 @@ const { title } = Astro.props;
   </head>
   <body>
     <header class="bg-blue-600 text-white p-6">
-      <h1 class="text-3xl font-bold">Copilot Instructions</h1>
+      <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">
+          <a href={import.meta.env.BASE_URL} class="hover:text-blue-200 transition">Copilot Instructions</a>
+        </h1>
+        <nav class="flex gap-6 text-sm">
+          <a href={`${import.meta.env.BASE_URL}skills/`} class="hover:text-blue-200 transition font-semibold">📚 Skills</a>
+          <a href={`${import.meta.env.BASE_URL}instructions/`} class="hover:text-blue-200 transition font-semibold">📋 Instructions</a>
+          <a href={`${import.meta.env.BASE_URL}agents/`} class="hover:text-blue-200 transition font-semibold">🤖 Agents</a>
+          <a href={`${import.meta.env.BASE_URL}plugins/`} class="hover:text-blue-200 transition font-semibold">🔌 Plugins</a>
+        </nav>
+      </div>
     </header>
     <main class="max-w-6xl mx-auto p-6">
       <h2 class="text-2xl font-bold mb-4">{title}</h2>
