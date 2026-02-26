@@ -5,7 +5,7 @@
   },
   "plugins": [
     {
-      "name": "review-plugin",
+      "name": "csharp-clean-architecture-plugin",
       "source": "./plugins/csharp-clean-architecture-development",
       "description": "CSharp clean architecture"
     }
