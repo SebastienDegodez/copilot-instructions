@@ -5,16 +5,20 @@
   --secondary: #455a64;
   --accent: #ff6f00;
   
-  --bg-main: #ffffff;
-  --bg-secondary: #f5f5f5;
+  /* Dark theme */
+  --bg-main: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
   --bg-code: #263238;
   
-  --text-primary: #212121;
-  --text-secondary: #757575;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
   --text-on-primary: #ffffff;
   
-  --border: #e0e0e0;
-  --shadow: rgba(0, 0, 0, 0.1);
+  --border: #334155;
+  --border-hover: #0288d1;
+  --shadow: rgba(0, 0, 0, 0.3);
 }
 
 body {

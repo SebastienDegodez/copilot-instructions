@@ -18,8 +18,8 @@ function formatSkillName(slug: string): string {
 
 <BaseLayout title="Skills">
   <div class="space-y-6">
-    <div class="bg-blue-50 p-6 rounded-lg">
-      <p class="text-lg text-gray-700">
+    <div class="bg-slate-800 border border-slate-700 p-6 rounded-lg">
+      <p class="text-lg text-slate-300">
         Explore specialized capabilities with bundled resources for implementing advanced features and patterns.
       </p>
     </div>
@@ -32,20 +32,20 @@ function formatSkillName(slug: string): string {
           return (
           <a
             href={`${import.meta.env.BASE_URL}skills/${skillSlug}/`}
-            class="border border-gray-300 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block"
+            class="bg-slate-800 border border-slate-700 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block"
           >
-            <h3 class="text-xl font-bold mb-2 text-blue-600">
+            <h3 class="text-xl font-bold mb-2 text-blue-400">
               {formatSkillName(skillSlug)}
             </h3>
             {skill.data.description && (
-              <p class="text-gray-600 text-sm">
+              <p class="text-slate-400 text-sm">
                 {skill.data.description}
               </p>
             )}
             {skill.data.tags && skill.data.tags.length > 0 && (
               <div class="mt-4 flex flex-wrap gap-2">
                 {skill.data.tags.map((tag) => (
-                  <span class="inline-block bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-xs">
+                  <span class="inline-block bg-slate-700 text-slate-200 px-3 py-1 rounded-full text-xs">
                     {tag}
                   </span>
                 ))}

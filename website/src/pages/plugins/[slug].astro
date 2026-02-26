@@ -39,69 +39,138 @@ try {slug
   <div class="space-y-6">
     <a
       href={`${import.meta.env.BASE_URL}plugins/`}
-      class="inline-block text-blue-600 hover:text-blue-800 font-semibold mb-4"
+      class="inline-block text-blue-400 hover:text-blue-300 font-semibold mb-4"
     >
       ← Back to Plugins
     </a>
 
-    <div class="bg-blue-50 p-6 rounded-lg">
-      <h1 class="text-3xl font-bold mb-2 text-gray-900">{plugin.data.name}</h1>
-      <p class="text-lg text-gray-700 mb-4">{plugin.data.description}</p>
-      
-      <div class="flex flex-wrap gap-4 text-sm text-gray-600">
-        <div>
-          <span class="font-semibold">Version:</span> {plugin.data.version}
-        </div>
-        {plugin.data.author && (
-          <div>
-            <span class="font-semibold">Author:</span> {plugin.data.author}
-          </div>
-        )}
-        <div>
-          <span class="font-semibold">Skills:</span> {plugin.data.skills.length}
-        </div>
-      </div>
+    <h1 class="text-3xl font-bold text-slate-100">{plugin.data.name}</h1>
 
-      {plugin.data.tags && plugin.data.tags.length > 0 && (
-        <div class="mt-4 flex flex-wrap gap-2">
-          {plugin.data.tags.map((tag) => (
-            <span class="inline-block bg-blue-200 text-blue-900 px-3 py-1 rounded-full text-xs font-semibold">
-              {tag}
-            </span>
-          ))}
+    <div class="bg-gradient-to-r from-blue-900/30 to-slate-800 border-l-4 border-blue-500 p-6 rounded-r-lg">
+      <h2 class="text-sm uppercase tracking-wide text-blue-300 font-semibold mb-2">Description</h2>
+      <p class="text-slate-200 text-lg leading-relaxed">{plugin.data.description}</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-lg">
+        <div class="text-slate-400 text-sm mb-1">Version</div>
+        <div class="text-slate-100 font-semibold">{plugin.data.version}</div>
+      </div>
+      {plugin.data.author && (
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-lg">
+          <div class="text-slate-400 text-sm mb-1">Author</div>
+          <div class="text-slate-100 font-semibold">{plugin.data.author}</div>
         </div>
       )}
-    </div>
-
-    <div class="bg-white border border-gray-200 p-6 rounded-lg">
-      <h2 class="text-2xl font-bold mb-4 text-gray-900">Included Skills</h2>
-      <ul class="space-y-2">
-        {plugin.data.skills.map((skill) => (
-          <li class="flex items-center">
-            <svg class="w-5 h-5 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-            <span class="text-gray-700">{skill}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-
-    <div class="bg-white border border-gray-200 p-6 rounded-lg">
-      <h2 class="text-2xl font-bold mb-4 text-gray-900">📦 Installation</h2>
-      <div class="bg-gray-900 p-4 rounded-lg mb-4">
-        <code class="text-sm font-mono text-green-400 block">
-          <span class="text-gray-500"># Copy the plugin directory to your workspace</span><br />
-          <span class="text-yellow-300">cp -r</span> plugins/{slug} /path/to/your/workspace/plugins/
-        </code>
+      <div class="bg-slate-800 border border-slate-700 p-4 rounded-lg">
+        <div class="text-slate-400 text-sm mb-1">Skills Included</div>
+        <div class="text-slate-100 font-semibold">{plugin.data.skills.length}</div>
       </div>
-      <p class="text-gray-600 text-sm">
-        💡 After copying, the plugin skills and configurations will be available in your GitHub Copilot environment.
-      </p>
     </div>
 
-    <article class="prose prose-sm sm:prose lg:prose-lg max-w-none">
-      <Fragment set:html={readmeContent} />
-    </article>
+    {plugin.data.tags && plugin.data.tags.length > 0 && (
+      <div class="flex flex-wrap gap-2">
+        {plugin.data.tags.map((tag) => (
+          <span class="inline-block bg-blue-900/50 text-blue-300 px-3 py-1 rounded-full text-xs font-semibold">
+            {tag}
+          </span>
+        ))}
+      </div>
+    )}
+
+    <div class="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+      {/* Tabs Navigation */}
+      <div class="flex border-b border-slate-700 overflow-x-auto">
+        <button
+          id="tab-overview"
+          class="tab-button px-6 py-3 font-semibold text-blue-400 border-b-2 border-blue-500 bg-slate-900/50 whitespace-nowrap"
+          onclick="switchTab('overview')"
+        >
+          📋 Overview
+        </button>
+        <button
+          id="tab-readme"
+          class="tab-button px-6 py-3 font-semibold text-slate-400 hover:text-slate-200 transition whitespace-nowrap"
+          onclick="switchTab('readme')"
+        >
+          📖 README
+        </button>
+      </div>
+
+      {/* Tab: Overview */}
+      <div id="content-overview" class="tab-content p-8 space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold mb-4 text-slate-100 flex items-center gap-2">
+            📦 Installation
+          </h2>
+          <div class="bg-gray-900 p-4 rounded-lg mb-4 border border-slate-700">
+            <code class="text-sm font-mono text-green-400 block">
+              <span class="text-gray-500"># Install the plugin using GitHub Copilot CLI</span><br />
+              <span class="text-yellow-300">copilot plugin install</span> <span class="text-blue-400">{slug}</span>
+            </code>
+          </div>
+          <p class="text-slate-400 text-sm">
+            💡 After installation, the plugin skills and configurations will be available in your GitHub Copilot environment.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-bold mb-4 text-slate-100">Included Skills</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plugin.data.skills.map((skill) => {
+              const formattedName = skill.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+              return (
+                <a
+                  href={`${import.meta.env.BASE_URL}skills/${skill}/?from=plugin&plugin=${slug}`}
+                  class="bg-slate-900/50 border border-slate-700 p-6 rounded-lg hover:shadow-xl hover:border-blue-500 transition duration-300 block"
+                >
+                  <h3 class="text-xl font-bold mb-2 text-blue-400">{formattedName}</h3>
+                  <p class="text-slate-400 text-sm">Click to view skill details →</p>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Tab: README */}
+      <div id="content-readme" class="tab-content p-8 hidden">
+        <article class="prose prose-invert prose-lg max-w-none prose-headings:text-slate-100 prose-h1:text-3xl prose-h2:text-2xl prose-h2:border-b prose-h2:border-slate-700 prose-h2:pb-2 prose-h3:text-xl prose-p:text-slate-300 prose-a:text-blue-400 prose-a:no-underline hover:prose-a:text-blue-300 hover:prose-a:underline prose-strong:text-slate-200 prose-code:text-blue-300 prose-code:bg-slate-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-ul:text-slate-300 prose-ol:text-slate-300 prose-li:text-slate-300 prose-blockquote:border-blue-500 prose-blockquote:text-slate-400">
+          <Fragment set:html={readmeContent} />
+        </article>
+      </div>
+    </div>
   </div>
 </BaseLayout>
+
+<script>
+  // Tab switching functionality
+  function switchTab(tabName: string) {
+    // Hide all tab contents
+    const contents = document.querySelectorAll('.tab-content');
+    contents.forEach(content => content.classList.add('hidden'));
+    
+    // Remove active state from all tabs
+    const tabs = document.querySelectorAll('.tab-button');
+    tabs.forEach(tab => {
+      tab.classList.remove('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-slate-900/50');
+      tab.classList.add('text-slate-400');
+    });
+    
+    // Show selected tab content
+    const selectedContent = document.getElementById(`content-${tabName}`);
+    if (selectedContent) {
+      selectedContent.classList.remove('hidden');
+    }
+    
+    // Activate selected tab
+    const selectedTab = document.getElementById(`tab-${tabName}`);
+    if (selectedTab) {
+      selectedTab.classList.remove('text-slate-400');
+      selectedTab.classList.add('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-slate-900/50');
+    }
+  }
+
+  // Make switchTab globally accessible
+  (window as any).switchTab = switchTab;
+</script>

@@ -20,8 +20,8 @@ function formatInstructionName(slug: string): string {
 
 <BaseLayout title="Instructions">
   <div class="space-y-6">
-    <div class="bg-blue-50 p-6 rounded-lg">
-      <p class="text-lg text-gray-700">
+    <div class="bg-slate-800 border border-slate-700 p-6 rounded-lg">
+      <p class="text-lg text-slate-300">
         Coding standards and best practices for your projects.
       </p>
     </div>
@@ -31,19 +31,19 @@ function formatInstructionName(slug: string): string {
         sortedInstructions.map((instruction) => (
           <a
             href={`${import.meta.env.BASE_URL}instructions/${instruction.id}/`}
-            class="border border-gray-300 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block"
+            class="bg-slate-800 border border-slate-700 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block"
           >
-            <h3 class="text-xl font-bold mb-2 text-blue-600">
+            <h3 class="text-xl font-bold mb-2 text-blue-400">
               {formatInstructionName(instruction.id)}
             </h3>
             {instruction.data.description && (
-              <p class="text-gray-600 text-sm mb-3">
+              <p class="text-slate-400 text-sm mb-3">
                 {instruction.data.description}
               </p>
             )}
             {instruction.data.applyTo && (
               <div class="mt-auto">
-                <span class="inline-block bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-xs">
+                <span class="inline-block bg-slate-700 text-slate-200 px-3 py-1 rounded-full text-xs">
                   {instruction.data.applyTo}
                 </span>
               </div>

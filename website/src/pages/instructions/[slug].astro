@@ -35,27 +35,29 @@ const description = instruction.data.description;
   <div class="space-y-6">
     <a
       href={`${import.meta.env.BASE_URL}instructions/`}
-      class="inline-block text-blue-600 hover:text-blue-800 font-semibold mb-4"
+      class="inline-block text-blue-400 hover:text-blue-300 font-semibold mb-4"
     >
       ← Back to Instructions
     </a>
 
     {description && (
-      <p class="text-gray-600 text-lg mb-6">
+      <p class="text-slate-400 text-lg mb-6">
         {description}
       </p>
     )}
 
     {instruction.data.applyTo && (
       <div class="mb-6">
-        <span class="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold">
+        <span class="inline-block bg-blue-900/50 text-blue-300 px-4 py-2 rounded-full text-sm font-semibold">
           Applies to: {instruction.data.applyTo}
         </span>
       </div>
     )}
 
-    <article class="prose prose-sm sm:prose lg:prose-lg max-w-none">
-      <Content />
-    </article>
+    <div class="bg-slate-800 border border-slate-700 rounded-lg p-8">
+      <article class="prose prose-invert prose-lg max-w-none prose-headings:text-slate-100 prose-h1:text-3xl prose-h2:text-2xl prose-h2:border-b prose-h2:border-slate-700 prose-h2:pb-2 prose-h3:text-xl prose-p:text-slate-300 prose-a:text-blue-400 prose-a:no-underline hover:prose-a:text-blue-300 hover:prose-a:underline prose-strong:text-slate-200 prose-code:text-blue-300 prose-code:bg-slate-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-ul:text-slate-300 prose-ol:text-slate-300 prose-li:text-slate-300 prose-blockquote:border-blue-500 prose-blockquote:text-slate-400">
+        <Content />
+      </article>
+    </div>
   </div>
 </BaseLayout>
