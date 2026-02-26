@@ -1,0 +1,14 @@
+name: csharp-clean-architecture-development
+version: 1.0.0
+description: Comprehensive C# development plugin with DDD, Clean Architecture, CQRS, and testing best practices
+author: Sebastien DEGODEZ
+tags:
+  - csharp
+  - dotnet
+  - clean-architecture
+  - ddd
+  - cqrs
+  - testing
+skills:
+  - application-layer-testing
+  - clean-architecture-dotnet

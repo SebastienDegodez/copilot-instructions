@@ -1,0 +1,65 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const agents = await getCollection('agents');
+  return agents.map((agent) => ({
+    params: { slug: agent.id },
+    props: { agent },
+  }));
+}
+
+interface Props {
+  agent: any;
+}
+
+const { agent } = Astro.props;
+
+// Function to format agent slug to readable name
+function formatAgentName(slug: string): string {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+const { Content } = await render(agent);
+const title = agent.data.name || formatAgentName(agent.id);
+const description = agent.data.description;
+---
+
+<BaseLayout title={title}>
+  <div class="space-y-6">
+    <a
+      href={`${import.meta.env.BASE_URL}agents/`}
+      class="inline-block text-blue-400 hover:text-blue-300 font-semibold mb-4"
+    >
+      ← Back to Agents
+    </a>
+
+    {description && (
+      <div class="bg-slate-800 border border-slate-700 p-6 rounded-lg mb-6">
+        <p class="text-slate-300 text-lg">
+          {description}
+        </p>
+      </div>
+    )}
+
+    {agent.data.tags && agent.data.tags.length > 0 && (
+      <div class="flex flex-wrap gap-2 mb-6">
+        {agent.data.tags.map((tag) => (
+          <span class="inline-block bg-slate-700 text-slate-200 px-3 py-1 rounded-full text-sm">
+            {tag}
+          </span>
+        ))}
+      </div>
+    )}
+
+    <div class="bg-slate-800 border border-slate-700 rounded-lg p-8">
+      <article class="prose prose-invert prose-lg max-w-none prose-headings:text-slate-100 prose-h1:text-3xl prose-h2:text-2xl prose-h2:border-b prose-h2:border-slate-700 prose-h2:pb-2 prose-h3:text-xl prose-p:text-slate-300 prose-a:text-blue-400 prose-a:no-underline hover:prose-a:text-blue-300 hover:prose-a:underline prose-strong:text-slate-200 prose-code:text-blue-300 prose-code:bg-slate-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-ul:text-slate-300 prose-ol:text-slate-300 prose-li:text-slate-300 prose-blockquote:border-blue-500 prose-blockquote:text-slate-400">
+        <Content />
+      </article>
+    </div>
+  </div>
+</BaseLayout>

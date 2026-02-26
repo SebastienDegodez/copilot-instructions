@@ -1,0 +1,56 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const agents = await getCollection('agents');
+
+// Sort agents alphabetically by id
+const sortedAgents = agents.sort((a, b) => a.id.localeCompare(b.id));
+
+// Function to format agent slug to readable name
+function formatAgentName(slug: string): string {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+---
+
+<BaseLayout title="Agents">
+  <div class="space-y-6">
+    <div class="bg-slate-800 border border-slate-700 p-6 rounded-lg">
+      <p class="text-lg text-slate-300">
+        Custom AI personas for specialized workflows and domains.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {
+        sortedAgents.map((agent) => (
+          <a
+            href={`${import.meta.env.BASE_URL}agents/${agent.id}/`}
+            class="bg-slate-800 border border-slate-700 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block"
+          >
+            <h3 class="text-xl font-bold mb-2 text-blue-400">
+              {agent.data.name || formatAgentName(agent.id)}
+            </h3>
+            {agent.data.description && (
+              <p class="text-slate-400 text-sm mb-4">
+                {agent.data.description}
+              </p>
+            )}
+            {agent.data.tags && agent.data.tags.length > 0 && (
+              <div class="mt-4 flex flex-wrap gap-2">
+                {agent.data.tags.map((tag) => (
+                  <span class="inline-block bg-slate-700 text-slate-200 px-3 py-1 rounded-full text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

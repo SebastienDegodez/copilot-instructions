@@ -1,0 +1,73 @@
+name: Deploy Astro Site to GitHub Pages
+
+on:
+  # Trigger deployment on push to main when content changes
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'instructions/**'
+      - 'skills/**'
+      - 'agents/**'
+      - 'plugins/**'
+  
+  # Allow manual deployment from Actions tab
+  workflow_dispatch:
+
+# Permissions needed for GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Prevent concurrent deployments - cancel in-progress runs
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Astro Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+      
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
+      
+      - name: Install dependencies
+        working-directory: ./website
+        run: npm ci
+      
+      - name: Build Astro site
+        working-directory: ./website
+        run: npm run build
+        env:
+          # Use the configured base path for GitHub Pages
+          SITE: https://sebastiendegodez.github.io/copilot-instructions
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./website/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

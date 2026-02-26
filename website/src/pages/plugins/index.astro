@@ -1,0 +1,53 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const plugins = await getCollection('plugins');
+
+// Sort plugins alphabetically by name
+const sortedPlugins = plugins.sort((a, b) => a.data.name.localeCompare(b.data.name));
+---
+
+<BaseLayout title="Plugins">
+  <div class="space-y-6">
+    <div class="bg-slate-800 border border-slate-700 p-6 rounded-lg">
+      <p class="text-lg text-slate-300">
+        Installable packages bundling related skills and agents to accelerate your development workflow.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {
+        sortedPlugins.map((plugin) => {
+          // Extract directory name from id (e.g., "csharp-clean-architecture-development/plugin" -> "csharp-clean-architecture-development")
+          const slug = plugin.id.split('/')[0];
+          return (
+            <a
+              href={`${import.meta.env.BASE_URL}plugins/${slug}/`}
+              class="bg-slate-800 border border-slate-700 p-6 rounded-lg hover:shadow-lg hover:border-blue-500 transition duration-300 block"
+            >
+              <h3 class="text-xl font-bold mb-2 text-blue-400">
+                {plugin.data.name}
+              </h3>
+              <p class="text-slate-400 text-sm mb-4">
+                {plugin.data.description}
+              </p>
+              <div class="text-sm text-slate-400 mb-4">
+                <span class="font-semibold">{plugin.data.skills.length}</span> skill{plugin.data.skills.length !== 1 ? 's' : ''} included
+              </div>
+              {plugin.data.tags && plugin.data.tags.length > 0 && (
+                <div class="flex flex-wrap gap-2">
+                  {plugin.data.tags.map((tag) => (
+                    <span class="inline-block bg-slate-700 text-slate-200 px-3 py-1 rounded-full text-xs">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </a>
+          );
+        })
+      }
+    </div>
+  </div>
+</BaseLayout>
