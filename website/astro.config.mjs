@@ -3,7 +3,7 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   site: 'https://sebastiendegodez.github.io',
-  base: import.meta.env.PROD ? '/copilot-instructions' : '/',
+  base: import.meta.env.PROD ? '/copilot-instructions/' : '/',
   integrations: [tailwind()],
   markdown: {
     shikiConfig: {
