@@ -1,0 +1,13 @@
+{
+  "name": "Copilot-Instruction Sebastien DEGODEZ",
+  "owner": {
+    "name": "DEGODEZ Sébastien"
+  },
+  "plugins": [
+    {
+      "name": "review-plugin",
+      "source": "./plugins/csharp-clean-architecture-development",
+      "description": "CSharp clean architecture"
+    }
+  ]
+}
