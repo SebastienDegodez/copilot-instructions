@@ -29,7 +29,7 @@ This project provides a set of best practices, coding rules, and prompt instruct
 
 ## ✨ Features
 
-- 🏛️ Domain-Driven Design (DDD) guidelines ([see instructions](.github/instructions/domain-driven-design.instructions.md))
+- 🏛️ Domain-Driven Design (DDD) guidelines ([see instructions](instructions/domain-driven-design.instructions.md))
 - 📐 Specification pattern for business rules ([see instructions](.github/instructions/specification-business-rules-csharp.instructions.md))
 - 🧪 Unit & Integration testing best practices ([see instructions](.github/instructions/unit-and-integration-tests.instructions.md))
 - 🗂️ Command/Query (CQS/CQRS) best practices ([see command instructions](.github/instructions/command-cqs-csharp.instructions.md), [see query instructions](.github/instructions/query-cqs-csharp.instructions.md))
