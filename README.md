@@ -32,7 +32,7 @@ This project provides a set of best practices, coding rules, and prompt instruct
 - 🏛️ Domain-Driven Design (DDD) guidelines ([see instructions](instructions/domain-driven-design.instructions.md))
 - 📐 Specification pattern for business rules ([see instructions](instructions/specification-business-rules-csharp.instructions.md))
 - 🧪 Unit & Integration testing best practices ([see instructions](instructions/unit-and-integration-tests.instructions.md))
-- 🗂️ Command/Query (CQS/CQRS) best practices ([see command instructions](instructions/command-cqs-csharp.instructions.md), [see query instructions](instructions/query-cqs-csharp.instructions.md))
+- 🗂️ Command/Query (CQRS) best practices ([see command instructions](instructions/command-cqrs-csharp.instructions.md))
 - 📝 English-only documentation policy
 - 🤖 Copilot and AI prompt instructions
 - 🔄 TDD-first workflow for C# (see `copilot-instructions.md`)
