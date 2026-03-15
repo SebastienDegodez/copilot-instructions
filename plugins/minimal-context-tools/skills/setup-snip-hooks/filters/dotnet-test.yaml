@@ -1,0 +1,23 @@
+name: "dotnet-test"
+version: 1
+description: "Condensed dotnet test output: test failures and pass/fail summary"
+
+match:
+  command: "dotnet"
+  subcommand: "test"
+
+pipeline:
+  - action: "strip_ansi"
+  - action: "remove_lines"
+    pattern: "^\\s*(Determining projects to restore|All projects are up-to-date for restore)"
+  - action: "remove_lines"
+    pattern: "^\\s*\\S.*\\s->\\s"
+  - action: "remove_lines"
+    pattern: "^(Test run for |Microsoft \\(R\\) Test Execution|Copyright \\(c\\) Microsoft|Starting test execution|A total of \\d+ test file)"
+  - action: "remove_lines"
+    pattern: "^\\s*$"
+  - action: "compact_path"
+  - action: "format_template"
+    template: "{{.lines}}"
+
+on_error: "passthrough"
