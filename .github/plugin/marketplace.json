@@ -8,6 +8,11 @@
       "name": "csharp-clean-architecture-plugin",
       "source": "./plugins/csharp-clean-architecture-development",
       "description": "CSharp clean architecture"
+    },
+    {
+      "name": "minimal-context-tools",
+      "source": "./plugins/minimal-context-tools",
+      "description": "Collection of efficient CLI tools and workflows optimized for minimal context usage and one-shot patterns with LLMs"
     }
   ]
 }

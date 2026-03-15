@@ -1,0 +1,22 @@
+name: minimal-context-tools
+version: 1.0.0
+description: Collection of efficient CLI tools and workflows optimized for minimal context usage and one-shot patterns with LLMs
+author: Sebastien DEGODEZ
+tags:
+  - cli
+  - search
+  - context-efficiency
+  - one-shot
+  - productivity
+skills:
+  - analyzing-code-structure
+  - viewing-files
+  - extracting-code-structure
+  - finding-files
+  - fuzzy-selecting
+  - querying-json
+  - searching-text
+  - replacing-text
+  - analyzing-code
+  - querying-yaml
+  - setup-snip-hooks

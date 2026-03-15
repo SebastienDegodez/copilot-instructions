@@ -1,0 +1,17 @@
+name: "dotnet-build"
+version: 1
+description: "Condensed dotnet build output: errors, warnings, and build result"
+
+match:
+  command: "dotnet"
+  subcommand: "build"
+
+pipeline:
+  - action: "strip_ansi"
+  - action: "keep_lines"
+    pattern: "(: error |: warning |^Build (succeeded|FAILED)|\\s+\\d+ (Error|Warning)\\(s\\))"
+  - action: "compact_path"
+  - action: "format_template"
+    template: "{{if eq .count 0}}Build succeeded.{{else}}{{.lines}}{{end}}"
+
+on_error: "passthrough"
