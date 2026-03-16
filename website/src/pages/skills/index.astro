@@ -4,8 +4,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const skills = await getCollection('skills');
 
-// Sort skills alphabetically by directory name
-const sortedSkills = skills.sort((a, b) => a.id.localeCompare(b.id));
+// Sort skills alphabetically by directory name, deduplicating by slug (root skills take priority)
+const seen = new Set<string>();
+const sortedSkills = skills
+  .sort((a, b) => {
+    const aIsRoot = a.id.startsWith('skills/');
+    const bIsRoot = b.id.startsWith('skills/');
+    if (aIsRoot && !bIsRoot) return -1;
+    if (!aIsRoot && bIsRoot) return 1;
+    return a.id.localeCompare(b.id);
+  })
+  .filter((skill) => {
+    const slug = skill.id.split('/').at(-2)!;
+    if (seen.has(slug)) return false;
+    seen.add(slug);
+    return true;
+  })
+  .sort((a, b) => {
+    const slugA = a.id.split('/').at(-2)!;
+    const slugB = b.id.split('/').at(-2)!;
+    return slugA.localeCompare(slugB);
+  });
 
 // Function to format skill slug to readable name
 function formatSkillName(slug: string): string {
@@ -27,8 +46,8 @@ function formatSkillName(slug: string): string {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {
         sortedSkills.map((skill) => {
-          // skill.id is in format "skill-name/SKILL", extract just "skill-name"
-          const skillSlug = skill.id.split('/')[0];
+          // skill.id is in format "skills/skill-name/SKILL" or "plugins/.../skills/skill-name/SKILL"
+          const skillSlug = skill.id.split('/').at(-2)!;
           return (
           <a
             href={`${import.meta.env.BASE_URL}skills/${skillSlug}/`}

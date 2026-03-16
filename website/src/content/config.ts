@@ -2,7 +2,7 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 const skillsCollection = defineCollection({
-  loader: glob({ pattern: '*/SKILL.md', base: '../skills' }),
+  loader: glob({ pattern: ['skills/*/SKILL.md', 'plugins/*/skills/*/SKILL.md'], base: '..' }),
   schema: z.object({
     name: z.string().optional(),
     description: z.string().optional(),

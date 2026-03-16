@@ -7,14 +7,26 @@ import { marked } from 'marked';
 
 export async function getStaticPaths() {
   const skills = await getCollection('skills');
-  return skills.map((skill) => {
-    // The skill.id is in format "skill-name/SKILL", we want just "skill-name"
-    const slug = skill.id.split('/')[0];
-    return {
-      params: { slug },
-      props: { skill },
-    };
+  // Sort so root skills (id starts with 'skills/') take priority over plugin-bundled duplicates
+  const sorted = [...skills].sort((a, b) => {
+    const aIsRoot = a.id.startsWith('skills/');
+    const bIsRoot = b.id.startsWith('skills/');
+    if (aIsRoot && !bIsRoot) return -1;
+    if (!aIsRoot && bIsRoot) return 1;
+    return 0;
   });
+  const seen = new Set<string>();
+  return sorted
+    .map((skill) => {
+      // id format: "skills/skill-name/SKILL" or "plugins/.../skills/skill-name/SKILL"
+      const slug = skill.id.split('/').at(-2)!;
+      return { params: { slug }, props: { skill } };
+    })
+    .filter(({ params }) => {
+      if (seen.has(params.slug)) return false;
+      seen.add(params.slug);
+      return true;
+    });
 }
 
 interface Props {
