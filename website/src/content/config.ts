@@ -11,7 +11,11 @@ const skillsCollection = defineCollection({
 });
 
 const instructionsCollection = defineCollection({
-  loader: glob({ pattern: '*.instructions.md', base: '../instructions' }),
+  loader: glob({
+    pattern: '*.instructions.md',
+    base: '../instructions',
+    generateId: ({ entry }: { entry: string }) => entry.replace(/\.instructions\.md$/, ''),
+  }),
   schema: z.object({
     applyTo: z.string(),
     description: z.string().optional(),

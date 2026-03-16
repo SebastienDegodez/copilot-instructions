@@ -18,9 +18,7 @@ const { instruction } = Astro.props;
 
 // Function to format instruction slug to readable name
 function formatInstructionName(slug: string): string {
-  // Remove .instructions suffix if present
-  const cleanSlug = slug.replace(/\.instructions$/, '');
-  return cleanSlug
+  return slug
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
@@ -57,7 +55,7 @@ const description = instruction.data.description;
     <div class="bg-gray-900 border border-slate-700 rounded-lg px-4 py-3 flex items-center gap-3">
       <span class="text-yellow-300 text-sm">📦</span>
       <code class="text-sm font-mono text-green-400">
-        <span class="text-yellow-300">apm install </span><span class="text-blue-400">SebastienDegodez/copilot-instructions/instructions/{instruction.id}.md</span>
+        <span class="text-yellow-300">apm install </span><span class="text-blue-400">SebastienDegodez/copilot-instructions/instructions/{instruction.id}.instructions.md</span>
       </code>
     </div>
 
