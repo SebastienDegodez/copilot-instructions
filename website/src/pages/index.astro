@@ -6,13 +6,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <div class="space-y-8">
     <section class="bg-slate-800 border border-slate-700 p-8 rounded-lg">
       <h2 class="text-3xl font-bold text-blue-400 mb-4">Welcome to Copilot Instructions</h2>
-      <p class="text-lg text-slate-300 mb-6">
+      <p class="text-lg text-slate-300">
         A comprehensive repository of coding standards, skills, instructions, and agents to enhance your GitHub Copilot experience.
       </p>
-      <div class="flex gap-4">
-        <a href={`${import.meta.env.BASE_URL}skills/`} class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition">Browse Skills</a>
-        <a href={`${import.meta.env.BASE_URL}instructions/`} class="bg-orange-600 text-white px-6 py-3 rounded hover:bg-orange-700 transition">View Instructions</a>
-      </div>
     </section>
 
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
