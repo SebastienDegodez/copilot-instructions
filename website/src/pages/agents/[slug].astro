@@ -56,11 +56,37 @@ const description = agent.data.description;
       </div>
     )}
 
-    <div class="bg-gray-900 border border-slate-700 rounded-lg px-4 py-3 flex items-center gap-3">
-      <span class="text-yellow-300 text-sm">📦</span>
-      <code class="text-sm font-mono text-green-400">
-        <span class="text-yellow-300">apm install </span><span class="text-blue-400">SebastienDegodez/copilot-instructions/agents/{agent.id}.md</span>
-      </code>
+    <div class="bg-gray-900 border border-slate-700 rounded-lg overflow-hidden">
+      <div class="flex border-b border-slate-700">
+        <button id="itab-apm" class="itab px-4 py-2 text-sm font-semibold text-blue-400 border-b-2 border-blue-500 bg-slate-900/50 whitespace-nowrap" onclick="switchItab('apm')">
+          📦 APM
+        </button>
+        <button id="itab-vscode" class="itab px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 transition whitespace-nowrap" onclick="switchItab('vscode')">
+          <svg class="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 19.983V4.017a1.5 1.5 0 0 0-.85-1.43zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>
+          VS Code
+        </button>
+      </div>
+      <div id="icontent-apm" class="icontent p-4">
+        <code class="text-sm font-mono text-green-400 block">
+          <span class="text-yellow-300">apm install </span><span class="text-blue-400">SebastienDegodez/copilot-instructions/agents/{agent.id}.md</span>
+        </code>
+      </div>
+      <div id="icontent-vscode" class="icontent p-4 hidden flex flex-wrap gap-3">
+        <a
+          href={`vscode://github.copilot/install?gitRepositoryUrl=https://github.com/SebastienDegodez/copilot-instructions&relativePaths=agents/${agent.id}.md`}
+          class="inline-flex items-center gap-2 bg-[#007ACC] text-white px-4 py-2 rounded hover:bg-blue-600 transition text-sm font-semibold"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 19.983V4.017a1.5 1.5 0 0 0-.85-1.43zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>
+          Open in VS Code
+        </a>
+        <a
+          href={`vscode-insiders://github.copilot/install?gitRepositoryUrl=https://github.com/SebastienDegodez/copilot-instructions&relativePaths=agents/${agent.id}.md`}
+          class="inline-flex items-center gap-2 bg-[#24BC5B] text-white px-4 py-2 rounded hover:bg-green-600 transition text-sm font-semibold"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 19.983V4.017a1.5 1.5 0 0 0-.85-1.43zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>
+          Open in VS Code Insiders
+        </a>
+      </div>
     </div>
 
     <div class="bg-slate-800 border border-slate-700 rounded-lg p-8">
@@ -70,3 +96,20 @@ const description = agent.data.description;
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  function switchItab(name: string) {
+    document.querySelectorAll('.icontent').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.itab').forEach(el => {
+      el.classList.remove('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-slate-900/50');
+      el.classList.add('text-slate-400');
+    });
+    document.getElementById(`icontent-${name}`)?.classList.remove('hidden');
+    const tab = document.getElementById(`itab-${name}`);
+    if (tab) {
+      tab.classList.remove('text-slate-400');
+      tab.classList.add('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-slate-900/50');
+    }
+  }
+  (window as any).switchItab = switchItab;
+</script>
