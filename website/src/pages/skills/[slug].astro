@@ -49,10 +49,13 @@ const title = skill.data.name || formatSkillName(skill.id);
 const description = skill.data.description;
 
 // Try to load README.md if it exists
+// skill.id format: "skills/skill-name/SKILL" or "plugins/plugin-name/skills/skill-name/SKILL"
+// Strip the filename (SKILL) to get the directory path
+const skillDir = skill.id.split('/').slice(0, -1).join('/');
 let readmeContent = '';
 let hasReadme = false;
 try {
-  const readmePath = join(process.cwd(), '..', 'skills', slug, 'README.md');
+  const readmePath = join(process.cwd(), '..', skillDir, 'README.md');
   const readmeText = await readFile(readmePath, 'utf-8');
   readmeContent = await marked(readmeText);
   hasReadme = true;
