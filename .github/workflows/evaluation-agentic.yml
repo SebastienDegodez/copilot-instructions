@@ -1,0 +1,479 @@
+name: Agentic Evaluation Pipeline
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Every Monday at 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      evaluate_all:
+        description: "Force evaluate all assets (ignore benchmark cache)"
+        type: boolean
+        default: false
+      model:
+        description: "LLM model to use"
+        type: string
+        default: "gpt-4o"
+      runs:
+        description: "Number of evaluation runs per scenario"
+        type: string
+        default: "3"
+      asset_ids:
+        description: "Comma-separated list of specific asset IDs to evaluate (empty = discover automatically)"
+        type: string
+        default: ""
+  pull_request:
+    paths:
+      - "skills/**"
+      - "plugins/**"
+      - "instructions/**"
+      - "tests/**"
+      - "tools/evaluator/**"
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: evaluation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ── ChatOps gate ──────────────────────────────────────────────────────────
+  check-chatops:
+    name: Check for /evaluate command
+    if: github.event_name == 'issue_comment'
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+      pr-ref: ${{ steps.check.outputs.pr-ref }}
+      pr-sha: ${{ steps.check.outputs.pr-sha }}
+    steps:
+      - name: Check comment for /evaluate command
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.comment?.body ?? '';
+            const isEvaluate = /^\/evaluate(\s|$)/m.test(body);
+            const isPR = !!context.payload.issue?.pull_request;
+
+            core.setOutput('should-run', String(isEvaluate && isPR));
+
+            if (isEvaluate && isPR) {
+              const pr = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.issue.number,
+              });
+              core.setOutput('pr-ref', pr.data.head.ref);
+              core.setOutput('pr-sha', pr.data.head.sha);
+
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: 'rocket',
+              });
+            }
+
+  # ── Discover assets to evaluate ───────────────────────────────────────────
+  discover:
+    name: Smart Discovery
+    runs-on: ubuntu-latest
+    needs: [check-chatops]
+    if: |
+      always() && (
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'pull_request' ||
+        (github.event_name == 'issue_comment' && needs.check-chatops.outputs.should-run == 'true')
+      )
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
+      has-assets: ${{ steps.build-matrix.outputs.has-assets }}
+      source: ${{ steps.params.outputs.source }}
+      model: ${{ steps.params.outputs.model }}
+      runs: ${{ steps.params.outputs.runs }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.check-chatops.outputs.pr-ref || github.ref }}
+
+      - name: Set evaluation parameters
+        id: params
+        run: |
+          EVENT="${{ github.event_name }}"
+          if [ "$EVENT" = "schedule" ]; then
+            echo "source=scheduled" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "source=manual" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT" = "issue_comment" ]; then
+            echo "source=slash-command" >> "$GITHUB_OUTPUT"
+          else
+            echo "source=pr" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "model=${{ inputs.model || 'gpt-4o' }}" >> "$GITHUB_OUTPUT"
+          echo "runs=${{ inputs.runs || '3' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: tools/evaluator/package.json
+
+      - name: Install evaluator dependencies
+        working-directory: tools/evaluator
+        run: npm ci
+
+      - name: Discover changed assets (PR / ChatOps)
+        if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && needs.check-chatops.outputs.should-run == 'true')
+        working-directory: tools/evaluator
+        run: |
+          npx tsx src/index.ts discover \
+            --base-ref "origin/${{ github.base_ref || 'main' }}" \
+            --head-ref HEAD \
+            --repo-root "../.." \
+            --output /tmp/discovered.json
+          cat /tmp/discovered.json
+
+      - name: Discover all assets (scheduled / manual)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        working-directory: tools/evaluator
+        run: |
+          EXTRA_FLAGS=""
+          if [ "${{ inputs.evaluate_all }}" != "true" ]; then
+            EXTRA_FLAGS="--benchmark-summary ../../website/src/data/benchmarks/summary.json"
+          fi
+          npx tsx src/index.ts discover \
+            --all \
+            $EXTRA_FLAGS \
+            --repo-root "../.." \
+            --output /tmp/discovered.json
+          cat /tmp/discovered.json
+
+      - name: Override with specific asset IDs
+        if: github.event_name == 'workflow_dispatch' && inputs.asset_ids != ''
+        run: |
+          node -e "
+            const ids = process.argv[1].split(',').map(s => s.trim()).filter(Boolean);
+            const entries = ids.map(id => {
+              const [kind, ...nameParts] = id.split(':');
+              const name = nameParts.join(':');
+              return { id, kind, name, assetPath: '', testPath: null, changedFiles: [] };
+            });
+            const fs = require('fs');
+            fs.writeFileSync('/tmp/discovered.json', JSON.stringify({
+              entries,
+              isInfraChange: false,
+              skipped: entries.length === 0,
+              reason: 'Explicit asset IDs provided via workflow_dispatch'
+            }, null, 2));
+          " "${{ inputs.asset_ids }}"
+
+      - name: Analyze priority and build job matrix
+        id: build-matrix
+        run: |
+          DISCOVERED=$(cat /tmp/discovered.json 2>/dev/null || echo '{"entries":[],"skipped":true}')
+          ENTRIES=$(echo "$DISCOVERED" | node -e "
+            const data = JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));
+            process.stdout.write(JSON.stringify(data.entries ?? []));
+          ")
+          TOTAL=$(echo "$ENTRIES" | node -e "
+            const arr = JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));
+            process.stdout.write(String(arr.length));
+          ")
+
+          if [ "$TOTAL" = "0" ]; then
+            echo "has-assets=false" >> "$GITHUB_OUTPUT"
+            echo "matrix={\"include\":[]}" >> "$GITHUB_OUTPUT"
+            echo "No assets to evaluate"
+            exit 0
+          fi
+
+          echo "has-assets=true" >> "$GITHUB_OUTPUT"
+
+          # Build parallel batches (max 6 jobs, assets distributed evenly)
+          MATRIX=$(echo "$ENTRIES" | node -e "
+            const entries = JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));
+            const MAX_JOBS = 6;
+            const total = entries.length;
+            const jobCount = Math.min(MAX_JOBS, total);
+            const batchSize = Math.ceil(total / jobCount);
+            const include = [];
+            for (let i = 0; i < jobCount; i++) {
+              const batch = entries.slice(i * batchSize, (i + 1) * batchSize);
+              if (batch.length > 0) {
+                include.push({
+                  'job-index': String(i),
+                  'asset-ids': JSON.stringify(batch.map(e => e.id))
+                });
+              }
+            }
+            process.stdout.write(JSON.stringify({ include }));
+          ")
+
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "Matrix: $MATRIX"
+
+  # ── Parallel evaluation workers ───────────────────────────────────────────
+  run-evaluation:
+    name: "Evaluate (job ${{ matrix.job-index }})"
+    needs: [discover]
+    if: needs.discover.outputs.has-assets == 'true'
+    uses: ./.github/workflows/evaluation-run.yml
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    with:
+      asset-ids: ${{ matrix.asset-ids }}
+      model: ${{ needs.discover.outputs.model }}
+      runs: ${{ needs.discover.outputs.runs }}
+      source: ${{ needs.discover.outputs.source }}
+      job-index: ${{ matrix.job-index }}
+    secrets:
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+
+  # ── Aggregate results and generate insights ───────────────────────────────
+  analyze:
+    name: Analyze Results
+    runs-on: ubuntu-latest
+    needs: [discover, run-evaluation]
+    if: |
+      always() &&
+      needs.discover.outputs.has-assets == 'true' &&
+      needs.run-evaluation.result != 'skipped'
+    outputs:
+      report-path: ${{ steps.insights.outputs.report-path }}
+      has-results: ${{ steps.insights.outputs.has-results }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: tools/evaluator/package.json
+
+      - name: Install evaluator dependencies
+        working-directory: tools/evaluator
+        run: npm ci
+
+      - name: Download all result artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: evaluation-results-job-*
+          path: /tmp/all-results
+          merge-multiple: true
+
+      - name: Generate markdown report
+        id: insights
+        working-directory: tools/evaluator
+        run: |
+          if [ -z "$(ls /tmp/all-results/*.json 2>/dev/null)" ]; then
+            echo "has-results=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "has-results=true" >> "$GITHUB_OUTPUT"
+
+          npx tsx src/index.ts report \
+            --results /tmp/all-results \
+            --format markdown \
+            --output /tmp/evaluation-report.md
+
+          echo "report-path=/tmp/evaluation-report.md" >> "$GITHUB_OUTPUT"
+          echo "--- Report preview ---"
+          cat /tmp/evaluation-report.md
+
+      - name: Upload insight report artifact
+        if: steps.insights.outputs.has-results == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-insight-report
+          path: /tmp/evaluation-report.md
+          retention-days: 30
+
+  # ── Publish benchmark data ─────────────────────────────────────────────────
+  publish-benchmark:
+    name: Publish Benchmark Data
+    runs-on: ubuntu-latest
+    needs: [discover, run-evaluation, analyze]
+    if: |
+      always() &&
+      needs.run-evaluation.result == 'success' &&
+      needs.analyze.outputs.has-results == 'true' &&
+      (
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      )
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: tools/evaluator/package.json
+
+      - name: Install evaluator dependencies
+        working-directory: tools/evaluator
+        run: npm ci
+
+      - name: Download all result artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: evaluation-results-job-*
+          path: /tmp/all-results
+          merge-multiple: true
+
+      - name: Update benchmark summary
+        working-directory: tools/evaluator
+        run: |
+          npx tsx src/index.ts report \
+            --results /tmp/all-results \
+            --format benchmark \
+            --output "../../website/src/data/benchmarks"
+
+      - name: Commit and push benchmark updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet website/src/data/benchmarks/summary.json; then
+            git add website/src/data/benchmarks/summary.json
+            git commit -m "chore: update benchmark data [skip ci]"
+            git push
+            echo "Benchmark data committed and pushed"
+          else
+            echo "No changes to benchmark data"
+          fi
+
+  # ── Post results as PR / issue comment ────────────────────────────────────
+  comment-results:
+    name: Post Results Comment
+    runs-on: ubuntu-latest
+    needs: [discover, analyze]
+    if: |
+      always() &&
+      needs.analyze.outputs.has-results == 'true' &&
+      (
+        github.event_name == 'pull_request' ||
+        github.event_name == 'issue_comment'
+      )
+
+    steps:
+      - name: Download insight report
+        uses: actions/download-artifact@v4
+        with:
+          name: evaluation-insight-report
+          path: /tmp/report
+
+      - name: Post comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('/tmp/report/evaluation-report.md', 'utf-8');
+
+            const prNumber = context.payload.pull_request?.number
+              ?? context.payload.issue?.number;
+
+            if (!prNumber) {
+              core.warning('No PR number found — skipping comment');
+              return;
+            }
+
+            const marker = '<!-- evaluation-agentic-report -->';
+            const body = `${marker}\n${report}\n\n*Generated by the agentic evaluation pipeline.*`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+  # ── Update dashboard issue ────────────────────────────────────────────────
+  update-dashboard:
+    name: Update Dashboard Issue
+    runs-on: ubuntu-latest
+    needs: [discover, analyze, publish-benchmark]
+    if: |
+      always() &&
+      needs.analyze.outputs.has-results == 'true' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+
+    steps:
+      - name: Download insight report
+        uses: actions/download-artifact@v4
+        with:
+          name: evaluation-insight-report
+          path: /tmp/report
+
+      - name: Create or update dashboard issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('/tmp/report/evaluation-report.md', 'utf-8');
+            const now = new Date().toISOString();
+            const body = `${report}\n\n---\n*Last updated: ${now}*`;
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'evaluation-report',
+              state: 'open',
+            });
+
+            if (issues.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body,
+              });
+              core.info(`Updated existing dashboard issue #${issues[0].number}`);
+            } else {
+              const { data: issue } = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '📊 Evaluation Report',
+                body,
+                labels: ['evaluation-report'],
+              });
+              core.info(`Created new dashboard issue #${issue.number}`);
+            }

@@ -1,0 +1,121 @@
+name: Evaluation Worker
+
+on:
+  workflow_call:
+    inputs:
+      asset-ids:
+        description: "JSON array of asset IDs to evaluate (e.g. [\"skill:my-skill\"])"
+        required: true
+        type: string
+      model:
+        description: "LLM model to use"
+        required: false
+        type: string
+        default: "gpt-4o"
+      runs:
+        description: "Number of evaluation runs per scenario"
+        required: false
+        type: string
+        default: "3"
+      source:
+        description: "Evaluation source (pr | scheduled | manual | slash-command)"
+        required: false
+        type: string
+        default: "manual"
+      commit-sha:
+        description: "Commit SHA being evaluated"
+        required: false
+        type: string
+        default: ""
+      job-index:
+        description: "Job index for artifact naming"
+        required: false
+        type: string
+        default: "0"
+    outputs:
+      results-artifact:
+        description: "Name of the artifact containing evaluation results"
+        value: ${{ jobs.run.outputs.results-artifact }}
+    secrets:
+      LLM_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: "Evaluate batch ${{ inputs.job-index }}"
+    runs-on: ubuntu-latest
+    outputs:
+      results-artifact: ${{ steps.set-artifact.outputs.name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: tools/evaluator/package.json
+
+      - name: Install evaluator dependencies
+        working-directory: tools/evaluator
+        run: npm ci
+
+      - name: Resolve commit SHA
+        id: sha
+        run: |
+          SHA="${{ inputs.commit-sha }}"
+          if [ -z "$SHA" ]; then
+            SHA="$(git rev-parse HEAD)"
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Write entries file
+        id: write-entries
+        run: |
+          ASSET_IDS='${{ inputs.asset-ids }}'
+          ENTRIES_FILE="/tmp/entries-job-${{ inputs.job-index }}.json"
+
+          node -e "
+            const ids = JSON.parse(process.argv[1]);
+            const entries = ids.map(id => {
+              const [kind, ...nameParts] = id.split(':');
+              const name = nameParts.join(':');
+              return { id, kind, name };
+            });
+            const fs = require('fs');
+            fs.writeFileSync(process.argv[2], JSON.stringify({ entries }, null, 2));
+            console.log('Wrote', entries.length, 'entries to', process.argv[2]);
+          " "$ASSET_IDS" "$ENTRIES_FILE"
+
+          echo "entries-file=$ENTRIES_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Run evaluations
+        working-directory: tools/evaluator
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          mkdir -p /tmp/results-job-${{ inputs.job-index }}
+          npx tsx src/index.ts evaluate \
+            --entries "${{ steps.write-entries.outputs.entries-file }}" \
+            --model "${{ inputs.model }}" \
+            --output "/tmp/results-job-${{ inputs.job-index }}" \
+            --repo-root "../.." \
+            --source "${{ inputs.source }}" \
+            --commit-sha "${{ steps.sha.outputs.sha }}"
+
+      - name: Set artifact name
+        id: set-artifact
+        run: echo "name=evaluation-results-job-${{ inputs.job-index }}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-results-job-${{ inputs.job-index }}
+          path: /tmp/results-job-${{ inputs.job-index }}/
+          retention-days: 7
+          if-no-files-found: warn
