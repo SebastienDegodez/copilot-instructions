@@ -9,5 +9,13 @@ tags:
   - domain-driven-design
   - tdd
   - productivity
+  - software-development
+  - software-engineering
+  - craftsmanship
+  - mutation-testing
+  - gherkin
+  - behavior-driven-development
 skills:
   - outside-in-tdd
+  - mutation-testing
+  - gherkin-gate

@@ -1,0 +1,66 @@
+{
+  "skill_name": "mutation-testing",
+  "status": "running",
+  "status": "complete",
+  "current_experiment": 5,
+  "baseline_score": 73.3,
+  "best_score": 100.0,
+  "experiments": [
+    {
+      "id": 0,
+      "score": 22,
+      "max_score": 30,
+      "pass_rate": 73.3,
+      "status": "baseline",
+      "description": "original skill — no changes"
+    },
+    {
+      "id": 1,
+      "score": 25,
+      "max_score": 30,
+      "pass_rate": 83.3,
+      "status": "keep",
+      "description": "added universal prerequisite callout at top of Workflow section"
+    },
+    {
+      "id": 2,
+      "score": 26,
+      "max_score": 30,
+      "pass_rate": 86.7,
+      "status": "keep",
+      "description": "generified file-scoped debug command with exclusion flags"
+    },
+    {
+      "id": 3,
+      "score": 29,
+      "max_score": 30,
+      "pass_rate": 96.7,
+      "status": "keep",
+      "description": "added targeted re-run command after survivor classification in Step 4"
+    },
+    {
+      "id": 4,
+      "score": 30,
+      "max_score": 30,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "added survivor investigation requirement to CI failure context"
+    },
+    {
+      "id": 5,
+      "score": 30,
+      "max_score": 30,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "generified all remaining MonAssurance-specific CLI references"
+    }
+  ],
+  "eval_breakdown": [
+    {"name": "Green baseline check", "pass_count": 5, "total": 5},
+    {"name": "Correct scope", "pass_count": 5, "total": 5},
+    {"name": "Excludes infrastructure", "pass_count": 5, "total": 5},
+    {"name": "Survivor classification", "pass_count": 5, "total": 5},
+    {"name": "Runnable CLI command", "pass_count": 5, "total": 5},
+    {"name": "Threshold framing", "pass_count": 5, "total": 5}
+  ]
+}

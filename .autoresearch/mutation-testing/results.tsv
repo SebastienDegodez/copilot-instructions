@@ -1,0 +1,7 @@
+experiment	score	max_score	pass_rate	status	description
+0	22	30	73.3%	baseline	original skill — no changes
+1	25	30	83.3%	keep	added universal prerequisite callout at top of Workflow section
+2	26	30	86.7%	keep	generified file-scoped debug command with exclusion flags
+3	29	30	96.7%	keep	added targeted re-run command after survivor classification in Step 4
+4	30	30	100.0%	keep	added survivor investigation requirement to CI failure context
+5	30	30	100.0%	keep	generified all remaining MonAssurance-specific CLI references
