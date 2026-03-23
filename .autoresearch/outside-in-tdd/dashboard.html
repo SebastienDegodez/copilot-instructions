@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autoresearch Dashboard — outside-in-tdd</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #f6f8fa; color: #24292e; }
+
+    .header { background: white; border-bottom: 1px solid #d0d7de; padding: 18px 32px; display: flex; align-items: center; gap: 16px; }
+    .header h1 { font-size: 1.2rem; font-weight: 600; }
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+    .badge-running { background: #ddf4ff; color: #0969da; }
+    .badge-complete { background: #dafbe1; color: #1a7f37; }
+    .refresh-note { margin-left: auto; font-size: 0.75rem; color: #8c959f; }
+
+    .container { max-width: 1080px; margin: 0 auto; padding: 24px 28px; }
+
+    .score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .card { background: white; border: 1px solid #d0d7de; border-radius: 8px; padding: 16px 18px; }
+    .card-label { font-size: 0.7rem; font-weight: 600; color: #8c959f; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+    .card-value { font-size: 2rem; font-weight: 700; color: #24292e; line-height: 1; }
+    .card-sub { font-size: 0.75rem; color: #8c959f; margin-top: 5px; }
+
+    .panel { background: white; border: 1px solid #d0d7de; border-radius: 8px; padding: 20px; margin-bottom: 18px; }
+    .panel-title { font-size: 0.72rem; font-weight: 600; color: #8c959f; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 16px; }
+
+    .chart-wrap { height: 190px; position: relative; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    thead th { text-align: left; padding: 8px 10px; font-size: 0.7rem; font-weight: 600; color: #8c959f; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e8ecf0; }
+    tbody td { padding: 10px 10px; border-bottom: 1px solid #f0f3f6; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f6f8fa; }
+
+    .exp-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.72rem; font-weight: 700; }
+    .num-baseline { background: #ddf4ff; color: #0969da; }
+    .num-keep     { background: #dafbe1; color: #1a7f37; }
+    .num-discard  { background: #ffebe9; color: #cf222e; }
+
+    .status-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+    .pill-baseline { background: #ddf4ff; color: #0969da; }
+    .pill-keep     { background: #dafbe1; color: #1a7f37; }
+    .pill-discard  { background: #ffebe9; color: #cf222e; }
+
+    .pass-bar { height: 7px; border-radius: 4px; background: #e8ecf0; overflow: hidden; margin-top: 3px; }
+    .pass-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+    .fill-perfect { background: #1a7f37; }
+    .fill-good    { background: #0969da; }
+    .fill-weak    { background: #bc4c00; }
+
+    .eval-row { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+    .eval-name { width: 190px; font-size: 0.8rem; flex-shrink: 0; }
+    .eval-bar-wrap { flex: 1; }
+    .eval-count { font-size: 0.75rem; color: #8c959f; white-space: nowrap; width: 50px; text-align: right; }
+
+    .desc-cell { font-size: 0.78rem; color: #8c959f; max-width: 320px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔬 Autoresearch — <code>outside-in-tdd</code></h1>
+  <span id="status-badge" class="badge badge-running">Initialising…</span>
+  <span class="refresh-note">Auto-refreshes every 10s</span>
+</div>
+
+<div class="container">
+  <div class="score-grid">
+    <div class="card">
+      <div class="card-label">Baseline</div>
+      <div class="card-value" id="val-baseline">—</div>
+      <div class="card-sub">pass rate</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Best Score</div>
+      <div class="card-value" id="val-best">—</div>
+      <div class="card-sub">pass rate</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Experiments</div>
+      <div class="card-value" id="val-count">—</div>
+      <div class="card-sub">total run</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Improvement</div>
+      <div class="card-value" id="val-delta">—</div>
+      <div class="card-sub">percentage points</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Score Progression</div>
+    <div class="chart-wrap">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;">
+    <div class="panel">
+      <div class="panel-title">Eval Breakdown (cumulative across all runs)</div>
+      <div id="eval-breakdown"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Test Inputs</div>
+      <ol style="padding-left:18px; font-size:0.8rem; color:#444; line-height:1.9;">
+        <li>Add eligibility check for motorcycle with high horsepower</li>
+        <li>Implement query handler returning eligibility results + rejection reasons</li>
+        <li>Add rejection reason for drivers with a suspended license</li>
+        <li>Create command handler to submit an insurance request and persist it</li>
+        <li>Add age-based eligibility rule for electric scooters</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Experiment Log</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Score</th>
+          <th>Pass Rate</th>
+          <th>Status</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody id="exp-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let chart = null;
+
+async function refresh() {
+  try {
+    const r = await fetch('results.json?_=' + Date.now());
+    const data = await r.json();
+    render(data);
+  } catch (e) {
+    document.getElementById('status-badge').textContent = '⚠ Cannot load results.json';
+  }
+}
+
+function pctColor(p) {
+  if (p >= 95) return '#1a7f37';
+  if (p >= 80) return '#0969da';
+  return '#bc4c00';
+}
+
+function render(data) {
+  const badge = document.getElementById('status-badge');
+  if (data.status === 'complete') {
+    badge.textContent = '✓ Complete';
+    badge.className = 'badge badge-complete';
+  } else {
+    badge.textContent = `Running experiment #${data.current_experiment}…`;
+    badge.className = 'badge badge-running';
+  }
+
+  document.getElementById('val-baseline').textContent = data.baseline_score.toFixed(1) + '%';
+  document.getElementById('val-best').textContent    = data.best_score.toFixed(1) + '%';
+  document.getElementById('val-count').textContent   = data.experiments.length;
+  const delta = data.best_score - data.baseline_score;
+  document.getElementById('val-delta').textContent   = (delta >= 0 ? '+' : '') + delta.toFixed(1);
+
+  // Chart
+  const labels = data.experiments.map(e => 'Exp ' + e.id);
+  const values = data.experiments.map(e => e.pass_rate);
+  const ptColors = data.experiments.map(e =>
+    e.status === 'baseline' ? '#0969da' : e.status === 'keep' ? '#1a7f37' : '#cf222e'
+  );
+
+  if (!chart) {
+    const ctx = document.getElementById('chart').getContext('2d');
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Pass Rate %',
+          data: values,
+          borderColor: '#8c8cf8',
+          backgroundColor: 'rgba(140,140,248,0.07)',
+          borderWidth: 2,
+          tension: 0.35,
+          pointBackgroundColor: ptColors,
+          pointBorderColor: ptColors,
+          pointRadius: 7,
+          pointHoverRadius: 9,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 100, ticks: { callback: v => v + '%', font: { size: 11 } }, grid: { color: '#f0f3f6' } },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(1)}%` } } }
+      }
+    });
+  } else {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.data.datasets[0].pointBackgroundColor = ptColors;
+    chart.data.datasets[0].pointBorderColor = ptColors;
+    chart.update();
+  }
+
+  // Eval breakdown
+  const eb = document.getElementById('eval-breakdown');
+  eb.innerHTML = data.eval_breakdown.map(ev => {
+    const pct = (ev.pass_count / ev.total * 100).toFixed(0);
+    const fillClass = pct >= 95 ? 'fill-perfect' : pct >= 80 ? 'fill-good' : 'fill-weak';
+    return `
+      <div class="eval-row">
+        <div class="eval-name">${ev.name}</div>
+        <div class="eval-bar-wrap">
+          <div class="pass-bar"><div class="pass-fill ${fillClass}" style="width:${pct}%"></div></div>
+        </div>
+        <div class="eval-count">${ev.pass_count}/${ev.total}</div>
+      </div>`;
+  }).join('');
+
+  // Experiment table
+  const tbody = document.getElementById('exp-table');
+  tbody.innerHTML = [...data.experiments].reverse().map(e => `
+    <tr>
+      <td><span class="exp-num num-${e.status}">${e.id}</span></td>
+      <td><strong>${e.score}</strong>/${e.max_score}</td>
+      <td style="color:${pctColor(e.pass_rate)}; font-weight:600">${e.pass_rate.toFixed(1)}%</td>
+      <td><span class="status-pill pill-${e.status}">${e.status}</span></td>
+      <td class="desc-cell">${e.description}</td>
+    </tr>`).join('');
+}
+
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

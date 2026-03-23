@@ -1,0 +1,57 @@
+{
+  "skill_name": "outside-in-tdd",
+  "status": "complete",
+  "current_experiment": 4,
+  "baseline_score": 80.0,
+  "best_score": 100.0,
+  "experiments": [
+    {
+      "id": 0,
+      "score": 24,
+      "max_score": 30,
+      "pass_rate": 80.0,
+      "status": "baseline",
+      "description": "original skill — no changes"
+    },
+    {
+      "id": 1,
+      "score": 28,
+      "max_score": 30,
+      "pass_rate": 93.3,
+      "status": "keep",
+      "description": "added STOP block in Step 2: no domain classes before first compilation failure"
+    },
+    {
+      "id": 2,
+      "score": 29,
+      "max_score": 30,
+      "pass_rate": 96.7,
+      "status": "keep",
+      "description": "added Step 3: Verify with Mutation Testing as numbered workflow step"
+    },
+    {
+      "id": 3,
+      "score": 30,
+      "max_score": 30,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "extended STOP block: even if domain is known from context, create nothing before compilation fails"
+    },
+    {
+      "id": 4,
+      "score": 30,
+      "max_score": 30,
+      "pass_rate": 100.0,
+      "status": "discard",
+      "description": "tried anti-example for domain mocking — same score, discarded (simpler is better)"
+    }
+  ],
+  "eval_breakdown": [
+    {"name": "Gherkin-first gate", "pass_count": 25, "total": 25},
+    {"name": "Boundary-only mocking", "pass_count": 25, "total": 25},
+    {"name": "Pure domain tests", "pass_count": 25, "total": 25},
+    {"name": "Business test naming", "pass_count": 25, "total": 25},
+    {"name": "Emergent design", "pass_count": 18, "total": 25},
+    {"name": "Mutation testing closure", "pass_count": 23, "total": 25}
+  ]
+}

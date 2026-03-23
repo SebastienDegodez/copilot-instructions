@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autoresearch v2 — outside-in-tdd</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #f6f8fa; color: #24292e; }
+    .header { background: white; border-bottom: 1px solid #d0d7de; padding: 18px 32px; display: flex; align-items: center; gap: 16px; }
+    .header h1 { font-size: 1.1rem; font-weight: 600; }
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+    .badge-running  { background: #ddf4ff; color: #0969da; }
+    .badge-complete { background: #dafbe1; color: #1a7f37; }
+    .refresh-note { margin-left: auto; font-size: 0.74rem; color: #8c959f; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 24px 28px; }
+    .score-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+    .card { background: white; border: 1px solid #d0d7de; border-radius: 8px; padding: 14px 16px; }
+    .card-label { font-size: 0.68rem; font-weight: 600; color: #8c959f; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+    .card-value { font-size: 1.8rem; font-weight: 700; color: #24292e; line-height: 1; }
+    .card-sub { font-size: 0.72rem; color: #8c959f; margin-top: 4px; }
+    .panel { background: white; border: 1px solid #d0d7de; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+    .panel-title { font-size: 0.68rem; font-weight: 600; color: #8c959f; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 14px; }
+    .chart-wrap { height: 200px; position: relative; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th { text-align: left; padding: 7px 10px; font-size: 0.68rem; font-weight: 600; color: #8c959f; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e8ecf0; }
+    tbody td { padding: 9px 10px; border-bottom: 1px solid #f0f3f6; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f6f8fa; }
+    .exp-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 700; }
+    .num-baseline { background: #ddf4ff; color: #0969da; }
+    .num-keep     { background: #dafbe1; color: #1a7f37; }
+    .num-discard  { background: #ffebe9; color: #cf222e; }
+    .status-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+    .pill-baseline { background: #ddf4ff; color: #0969da; }
+    .pill-keep     { background: #dafbe1; color: #1a7f37; }
+    .pill-discard  { background: #ffebe9; color: #cf222e; }
+    .pass-bar { height: 7px; border-radius: 4px; background: #e8ecf0; overflow: hidden; margin-top: 3px; }
+    .pass-fill { height: 100%; border-radius: 4px; }
+    .fill-perfect { background: #1a7f37; }
+    .fill-good    { background: #0969da; }
+    .fill-weak    { background: #bc4c00; }
+    .eval-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .eval-name { width: 190px; font-size: 0.78rem; flex-shrink: 0; }
+    .eval-bar-wrap { flex: 1; }
+    .eval-count { font-size: 0.73rem; color: #8c959f; white-space: nowrap; width: 55px; text-align: right; }
+    .desc-cell { font-size: 0.76rem; color: #57606a; max-width: 340px; }
+    .inputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 16px; padding-left: 18px; font-size: 0.77rem; color: #444; line-height: 1.9; }
+    .v2-badge { display: inline-block; background: #fff3cd; color: #856404; border: 1px solid #ffc107; border-radius: 4px; padding: 1px 6px; font-size: 0.65rem; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>🔬 Autoresearch <span class="v2-badge">v2</span> — <code>outside-in-tdd</code></h1>
+  <span id="status-badge" class="badge badge-running">Chargement…</span>
+  <span class="refresh-note">Actualisation auto toutes les 10s</span>
+</div>
+<div class="container">
+  <div class="score-grid">
+    <div class="card"><div class="card-label">Baseline v2</div><div class="card-value" id="val-baseline">—</div><div class="card-sub">taux (15 inputs)</div></div>
+    <div class="card"><div class="card-label">Meilleur</div><div class="card-value" id="val-best">—</div><div class="card-sub">taux de réussite</div></div>
+    <div class="card"><div class="card-label">Expériences</div><div class="card-value" id="val-count">—</div><div class="card-sub">total lancées</div></div>
+    <div class="card"><div class="card-label">Keep rate</div><div class="card-value" id="val-keeprate">—</div><div class="card-sub">mutations gardées</div></div>
+    <div class="card"><div class="card-label">Gain v2</div><div class="card-value" id="val-delta">—</div><div class="card-sub">points de %</div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Progression du score</div>
+    <div class="chart-wrap"><canvas id="chart"></canvas></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+    <div class="panel">
+      <div class="panel-title">Breakdown par eval (cumulatif)</div>
+      <div id="eval-breakdown"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">15 inputs de test</div>
+      <ol class="inputs-grid">
+        <li>Moto haute puissance (v1)</li>
+        <li>Query + raisons de rejet (v1)</li>
+        <li>Rejet permis suspendu (v1)</li>
+        <li>Command handler dossier (v1)</li>
+        <li>Éligibilité trottinette (v1)</li>
+        <li>Feature simple "trop petite" 🆕</li>
+        <li>Règles combinées (âge + expérience) 🆕</li>
+        <li>Refactoring handler existant 🆕</li>
+        <li>Domaine déjà connu (EligibilityPolicy) 🆕</li>
+        <li>Nouveau type véhicule 🆕</li>
+        <li>Valeur limite exacte (age = 18) 🆕</li>
+        <li>Gherkin déjà écrit 🆕</li>
+        <li>Plusieurs scénarios Gherkin 🆕</li>
+        <li>Bug fix règle existante 🆕</li>
+        <li>Feature couche applicative 🆕</li>
+      </ol>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Journal des expériences</div>
+    <table>
+      <thead><tr><th>#</th><th>Score</th><th>Taux</th><th>Statut</th><th>Changement</th></tr></thead>
+      <tbody id="exp-table"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+let chart = null;
+async function refresh() {
+  try {
+    const r = await fetch('results.json?_=' + Date.now());
+    const data = await r.json();
+    render(data);
+  } catch(e) {
+    document.getElementById('status-badge').textContent = '⚠ Impossible de charger results.json';
+  }
+}
+function pctColor(p) { return p >= 95 ? '#1a7f37' : p >= 80 ? '#0969da' : '#bc4c00'; }
+function render(data) {
+  const badge = document.getElementById('status-badge');
+  badge.textContent = data.status === 'complete' ? '✓ Terminé' : `Expérience #${data.current_experiment} en cours…`;
+  badge.className = 'badge ' + (data.status === 'complete' ? 'badge-complete' : 'badge-running');
+  document.getElementById('val-baseline').textContent = data.baseline_score.toFixed(1) + '%';
+  document.getElementById('val-best').textContent     = data.best_score.toFixed(1) + '%';
+  document.getElementById('val-count').textContent    = data.experiments.length;
+  const kept = data.experiments.filter(e => e.status === 'keep').length;
+  const nonB = data.experiments.filter(e => e.status !== 'baseline').length;
+  document.getElementById('val-keeprate').textContent = nonB ? kept + '/' + nonB : '—';
+  const delta = data.best_score - data.baseline_score;
+  document.getElementById('val-delta').textContent    = (delta >= 0 ? '+' : '') + delta.toFixed(1);
+  const labels   = data.experiments.map(e => 'Exp ' + e.id);
+  const values   = data.experiments.map(e => e.pass_rate);
+  const ptColors = data.experiments.map(e => e.status === 'baseline' ? '#0969da' : e.status === 'keep' ? '#1a7f37' : '#cf222e');
+  if (!chart) {
+    chart = new Chart(document.getElementById('chart').getContext('2d'), {
+      type: 'line',
+      data: { labels, datasets: [{ data: values, borderColor: '#8c8cf8', backgroundColor: 'rgba(140,140,248,0.06)', borderWidth: 2.5, tension: 0.35, pointBackgroundColor: ptColors, pointBorderColor: ptColors, pointRadius: 8, pointHoverRadius: 10 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 75, max: 100, ticks: { callback: v => v + '%', font: { size: 11 } }, grid: { color: '#f0f3f6' } }, x: { ticks: { font: { size: 11 } }, grid: { display: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y.toFixed(1)}%` } } } }
+    });
+  } else {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.data.datasets[0].pointBackgroundColor = ptColors;
+    chart.data.datasets[0].pointBorderColor = ptColors;
+    chart.update();
+  }
+  document.getElementById('eval-breakdown').innerHTML = data.eval_breakdown.map(ev => {
+    const pct = (ev.pass_count / ev.total * 100).toFixed(0);
+    const fc = pct >= 95 ? 'fill-perfect' : pct >= 80 ? 'fill-good' : 'fill-weak';
+    return `<div class="eval-row"><div class="eval-name">${ev.name}</div><div class="eval-bar-wrap"><div class="pass-bar"><div class="pass-fill ${fc}" style="width:${pct}%"></div></div></div><div class="eval-count">${ev.pass_count}/${ev.total}</div></div>`;
+  }).join('');
+  document.getElementById('exp-table').innerHTML = [...data.experiments].reverse().map(e => `
+    <tr>
+      <td><span class="exp-num num-${e.status}">${e.id}</span></td>
+      <td><strong>${e.score}</strong>/${e.max_score}</td>
+      <td style="color:${pctColor(e.pass_rate)};font-weight:600">${e.pass_rate.toFixed(1)}%</td>
+      <td><span class="status-pill pill-${e.status}">${e.status}</span></td>
+      <td class="desc-cell">${e.description}</td>
+    </tr>`).join('');
+}
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

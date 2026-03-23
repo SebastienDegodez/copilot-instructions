@@ -1,0 +1,89 @@
+{
+  "skill_name": "outside-in-tdd (v2 — 15 inputs)",
+  "status": "complete",
+  "current_experiment": 8,
+  "baseline_score": 88.9,
+  "best_score": 97.8,
+  "experiments": [
+    {
+      "id": 0,
+      "score": 80,
+      "max_score": 90,
+      "pass_rate": 88.9,
+      "status": "baseline",
+      "description": "skill post-v1 — 3 mutations déjà appliquées, 15 inputs"
+    },
+    {
+      "id": 1,
+      "score": 83,
+      "max_score": 90,
+      "pass_rate": 92.2,
+      "status": "keep",
+      "description": "scope gherkin-gate explicite: bug fixes, refactoring, Gherkin déjà écrit"
+    },
+    {
+      "id": 2,
+      "score": 85,
+      "max_score": 90,
+      "pass_rate": 94.4,
+      "status": "keep",
+      "description": "STOP block étendu aux nouvelles variantes (type véhicule, valeur limite)"
+    },
+    {
+      "id": 3,
+      "score": 85,
+      "max_score": 90,
+      "pass_rate": 94.4,
+      "status": "discard",
+      "description": "essai suppression mutation-testing du footer Integration — aucun gain"
+    },
+    {
+      "id": 4,
+      "score": 87,
+      "max_score": 90,
+      "pass_rate": 96.7,
+      "status": "keep",
+      "description": "Step 3 mutation testing étendu aux bug fixes et refactoring"
+    },
+    {
+      "id": 5,
+      "score": 87,
+      "max_score": 90,
+      "pass_rate": 96.7,
+      "status": "discard",
+      "description": "anti-exemple bug fix sans Gherkin — aucun gain"
+    },
+    {
+      "id": 6,
+      "score": 88,
+      "max_score": 90,
+      "pass_rate": 97.8,
+      "status": "keep",
+      "description": "ajout ligne bug fix dans Common Mistakes — EVAL 1: 13→14"
+    },
+    {
+      "id": 7,
+      "score": 88,
+      "max_score": 90,
+      "pass_rate": 97.8,
+      "status": "discard",
+      "description": "essai exemple complet bug fix workflow — doublon avec Common Mistakes"
+    },
+    {
+      "id": 8,
+      "score": 88,
+      "max_score": 90,
+      "pass_rate": 97.8,
+      "status": "discard",
+      "description": "essai reformuler STOP block en liste numérotée — aucun gain"
+    }
+  ],
+  "eval_breakdown": [
+    {"name": "Gherkin-first gate", "pass_count": 119, "total": 135},
+    {"name": "Boundary-only mocking", "pass_count": 135, "total": 135},
+    {"name": "Pure domain tests", "pass_count": 135, "total": 135},
+    {"name": "Business test naming", "pass_count": 135, "total": 135},
+    {"name": "Emergent design", "pass_count": 128, "total": 135},
+    {"name": "Mutation testing closure", "pass_count": 120, "total": 135}
+  ]
+}

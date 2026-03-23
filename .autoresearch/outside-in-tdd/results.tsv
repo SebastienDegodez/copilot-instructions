@@ -1,0 +1,6 @@
+experiment	score	max_score	pass_rate	status	description
+0	24	30	80.0%	baseline	original skill — no changes
+1	28	30	93.3%	keep	added STOP block in Step 2 to enforce no upfront domain design
+2	29	30	96.7%	keep	added Step 3: Verify with Mutation Testing as numbered workflow step
+3	30	30	100.0%	keep	extended STOP block: even if domain is known from context, create nothing before compilation fails
+4	30	30	100.0%	discard	tried adding wrong-way anti-example for domain mocking — no improvement, reverted

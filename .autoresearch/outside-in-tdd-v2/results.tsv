@@ -1,0 +1,10 @@
+experiment	score	max_score	pass_rate	status	description
+0	80	90	88.9%	baseline	skill post-v1 — 3 mutations déjà appliquées, 15 inputs
+1	83	90	92.2%	keep	scope gherkin-gate explicite: bug fixes, refactoring, Gherkin déjà écrit
+2	85	90	94.4%	keep	STOP block étendu aux nouvelles variantes (type véhicule, valeur limite)
+3	85	90	94.4%	discard	essai suppression mutation-testing du footer Integration — aucun gain
+4	87	90	96.7%	keep	Step 3 mutation testing étendu aux bug fixes et refactoring
+5	87	90	96.7%	discard	anti-exemple bug fix sans Gherkin — EVAL 1 déjà à 13/15, aucun gain
+6	88	90	97.8%	keep	ajout ligne bug fix dans Common Mistakes — EVAL 1: 13→14
+7	88	90	97.8%	discard	essai: exemple complet bug fix workflow — aucun gain (doublon)
+8	88	90	97.8%	discard	essai: reformuler STOP block en liste numérotée — aucun gain
