@@ -53,7 +53,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '24.x'
           cache: 'npm'
           cache-dependency-path: tools/evaluator/package-lock.json
 
@@ -152,7 +152,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '24.x'
           cache: 'npm'
           cache-dependency-path: tools/evaluator/package-lock.json
 
@@ -257,7 +257,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '24.x'
           cache: 'npm'
           cache-dependency-path: tools/evaluator/package-lock.json
 

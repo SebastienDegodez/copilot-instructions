@@ -1,0 +1,165 @@
+---
+import summaryData from '../data/benchmarks/summary.json';
+
+interface Props {
+  /** The asset ID used in the benchmark data, e.g. "skill:creating-dotnet-mcp-servers" */
+  assetId: string;
+}
+
+interface ScenarioResult {
+  scenarioName: string;
+  description: string;
+  averageScore: number;
+  passRate: number;
+  passed: boolean;
+}
+
+interface HistoryEntry {
+  date: string;
+  commit: { sha: string; url: string };
+  model: string;
+  overallScore: number;
+  passRate: number;
+  scenarios: ScenarioResult[];
+  tokens: { input: number; output: number };
+  source: string;
+}
+
+interface BenchmarkEntry {
+  id: string;
+  kind: string;
+  name: string;
+  history: HistoryEntry[];
+}
+
+interface BenchmarkSummary {
+  lastUpdated: string;
+  entries: BenchmarkEntry[];
+}
+
+const { assetId } = Astro.props;
+const summary = summaryData as BenchmarkSummary;
+const entry = summary.entries.find((e) => e.id === assetId);
+const latest = entry?.history.at(-1);
+
+function formatScore(score: number): string {
+  return score.toFixed(2);
+}
+
+function formatPassRate(rate: number): string {
+  return `${Math.round(rate * 100)}%`;
+}
+
+function scoreClass(score: number): string {
+  if (score >= 7) return 'text-green-400';
+  if (score >= 5) return 'text-yellow-400';
+  return 'text-red-400';
+}
+
+function trendIcon(history: HistoryEntry[]): string {
+  if (history.length < 2) return null as unknown as string;
+  const prev = history.at(-2)!;
+  const curr = history.at(-1)!;
+  if (curr.overallScore > prev.overallScore) return '↑';
+  if (curr.overallScore < prev.overallScore) return '↓';
+  return '→';
+}
+
+function trendClass(history: HistoryEntry[]): string {
+  const icon = trendIcon(history);
+  if (icon === '↑') return 'text-green-400';
+  if (icon === '↓') return 'text-red-400';
+  return 'text-slate-400';
+}
+
+const trend = entry ? trendIcon(entry.history) : null;
+const trendCls = entry ? trendClass(entry.history) : 'text-slate-400';
+const benchmarkPageUrl = `${import.meta.env.BASE_URL}benchmarks/`;
+---
+
+<div class="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+  <div class="flex items-center justify-between px-5 py-3 border-b border-slate-700">
+    <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wide">📊 Evaluation Benchmark</h3>
+    <a href={benchmarkPageUrl} class="text-xs text-blue-400 hover:text-blue-300 transition">
+      View all →
+    </a>
+  </div>
+
+  {!latest ? (
+    <div class="px-5 py-6 text-center">
+      <p class="text-slate-500 text-sm">No evaluation data yet.</p>
+      <p class="text-slate-600 text-xs mt-1">
+        Results appear after the first pipeline run (weekly on Mondays, or on PR).
+      </p>
+    </div>
+  ) : (
+    <div class="p-5 space-y-4">
+      {/* Score summary row */}
+      <div class="flex items-center gap-6 flex-wrap">
+        <div class="text-center">
+          <div class={`text-2xl font-bold font-mono ${scoreClass(latest.overallScore)}`}>
+            {formatScore(latest.overallScore)}<span class="text-sm text-slate-500">/10</span>
+          </div>
+          <div class="text-xs text-slate-500 mt-0.5">Overall Score</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-slate-200">{formatPassRate(latest.passRate)}</div>
+          <div class="text-xs text-slate-500 mt-0.5">Pass Rate</div>
+        </div>
+        {trend && (
+          <div class="text-center">
+            <div class={`text-2xl font-bold ${trendCls}`}>{trend}</div>
+            <div class="text-xs text-slate-500 mt-0.5">Trend</div>
+          </div>
+        )}
+        <div class="ml-auto">
+          {latest.passRate === 1.0 ? (
+            <span class="inline-block bg-green-900 text-green-300 px-3 py-1.5 rounded-full text-sm font-bold">
+              ✅ PASS
+            </span>
+          ) : (
+            <span class="inline-block bg-red-900 text-red-300 px-3 py-1.5 rounded-full text-sm font-bold">
+              ❌ FAIL
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Scenario list */}
+      {latest.scenarios.length > 0 && (
+        <div class="space-y-2">
+          {latest.scenarios.map((scenario) => (
+            <div class="flex items-center justify-between bg-slate-700/50 rounded px-3 py-2 text-sm">
+              <div>
+                <span class="text-slate-200 font-medium">{scenario.scenarioName}</span>
+                <span class="text-slate-500 ml-2 text-xs">{scenario.description}</span>
+              </div>
+              <span class={`shrink-0 ml-4 font-mono font-bold ${scoreClass(scenario.averageScore)}`}>
+                {formatScore(scenario.averageScore)}/10
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Metadata footer */}
+      <div class="flex items-center justify-between text-xs text-slate-500 border-t border-slate-700 pt-3">
+        <span>
+          Model: <span class="font-mono text-slate-400">{latest.model}</span>
+        </span>
+        <span>
+          <a
+            href={latest.commit.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-mono hover:text-blue-400 transition"
+          >
+            {latest.commit.sha.slice(0, 7)}
+          </a>
+          &nbsp;·&nbsp;
+          {new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </span>
+      </div>
+    </div>
+  )}
+</div>

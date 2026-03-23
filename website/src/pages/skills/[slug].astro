@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import BenchmarkPanel from '../../components/BenchmarkPanel.astro';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { marked } from 'marked';
@@ -139,6 +140,8 @@ try {
         </article>
       </div>
     </div>
+
+    <BenchmarkPanel assetId={`skill:${slug}`} />
   </div>
 </BaseLayout>
 
