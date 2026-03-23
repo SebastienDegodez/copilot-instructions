@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import BenchmarkPanel from '../../components/BenchmarkPanel.astro';
 
 export async function getStaticPaths() {
   const instructions = await getCollection('instructions');
@@ -90,6 +91,8 @@ const description = instruction.data.description;
         <Content />
       </article>
     </div>
+
+    <BenchmarkPanel assetId={`instruction:${instruction.id}`} />
   </div>
 </BaseLayout>
 
