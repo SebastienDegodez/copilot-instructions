@@ -1,0 +1,24 @@
+kind: skill
+ref: skills/setup-husky-dotnet
+scenarios:
+  - name: setup-husky-for-dotnet-project
+    description: Set up Husky pre-commit hooks for a .NET project
+    prompt: |
+      Set up Husky for a .NET 9 project. Configure:
+      1. A pre-commit hook that runs dotnet format
+      2. A commit-msg hook that validates conventional commit format
+      Provide the exact commands and configuration files needed.
+    expectations:
+      keywords:
+        - "husky"
+        - "pre-commit"
+        - "dotnet format"
+    judge:
+      criteria: |
+        Score on:
+        - Correctness: Are the commands and config files accurate for .NET?
+        - Completeness: Are both hooks configured?
+        - Clarity: Are instructions clear and easy to follow?
+      passing_score: 7.0
+    timeout: 60
+    runs: 2

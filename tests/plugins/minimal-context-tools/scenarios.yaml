@@ -1,0 +1,21 @@
+kind: plugin
+ref: plugins/minimal-context-tools
+scenarios:
+  - name: find-files-by-pattern
+    description: Use the finding-files skill to locate files matching a pattern
+    prompt: |
+      Using the minimal-context-tools finding-files skill, find all TypeScript files
+      in a project that contain the word "Repository" in their name or content.
+      Provide the exact skill invocation and expected output format.
+    expectations:
+      keywords:
+        - "finding-files"
+    judge:
+      criteria: |
+        Score on:
+        - Correct skill usage: Does it invoke finding-files properly?
+        - Completeness: Does it cover both name and content search?
+        - Clarity: Are instructions actionable?
+      passing_score: 6.5
+    timeout: 60
+    runs: 2

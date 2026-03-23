@@ -1,0 +1,21 @@
+kind: skill
+ref: skills/migrating-prompts-to-skills
+scenarios:
+  - name: migrate-simple-prompt
+    description: Migrate a simple prompt into a proper skill structure
+    prompt: |
+      I have this Copilot prompt: "Always write TypeScript with strict mode enabled and use interfaces instead of type aliases for object shapes."
+      Migrate it to a proper skill following the SKILL.md format with a clear description, usage examples, and references.
+    expectations:
+      keywords:
+        - "SKILL.md"
+        - "description"
+    judge:
+      criteria: |
+        Score on:
+        - Structure: Does the output follow the correct SKILL.md format?
+        - Clarity: Is the skill description clear and actionable?
+        - Completeness: Are examples and references included?
+      passing_score: 6.5
+    timeout: 60
+    runs: 2

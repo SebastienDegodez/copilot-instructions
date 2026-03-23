@@ -1,0 +1,349 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import summaryData from '../data/benchmarks/summary.json';
+
+interface ScenarioRun {
+  run: number;
+  score: number;
+  passed: boolean;
+  keywordsFound: string[];
+  keywordsMissing: string[];
+}
+
+interface ScenarioResult {
+  scenarioName: string;
+  description: string;
+  runs: ScenarioRun[];
+  averageScore: number;
+  passRate: number;
+  passed: boolean;
+}
+
+interface HistoryEntry {
+  date: string;
+  commit: { sha: string; url: string };
+  model: string;
+  overallScore: number;
+  passRate: number;
+  scenarios: ScenarioResult[];
+  tokens: { input: number; output: number };
+  source: string;
+}
+
+interface BenchmarkEntry {
+  id: string;
+  kind: 'skill' | 'plugin' | 'instruction';
+  name: string;
+  history: HistoryEntry[];
+}
+
+interface BenchmarkSummary {
+  lastUpdated: string;
+  entries: BenchmarkEntry[];
+}
+
+const summary = summaryData as BenchmarkSummary;
+
+const skills = summary.entries.filter((e) => e.kind === 'skill');
+const plugins = summary.entries.filter((e) => e.kind === 'plugin');
+const instructions = summary.entries.filter((e) => e.kind === 'instruction');
+
+const totalEntries = summary.entries.length;
+const passedEntries = summary.entries.filter((e) => {
+  const latest = e.history.at(-1);
+  return latest ? latest.passRate === 1.0 : false;
+}).length;
+
+const globalPassRate = totalEntries > 0
+  ? Math.round((passedEntries / totalEntries) * 100)
+  : null;
+
+const lastRunDate = summary.lastUpdated
+  ? new Date(summary.lastUpdated).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+    })
+  : 'Never';
+
+function formatScore(score: number): string {
+  return score.toFixed(2);
+}
+
+function formatPassRate(rate: number): string {
+  return `${Math.round(rate * 100)}%`;
+}
+
+function formatName(name: string): string {
+  return name
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function getLatest(entry: BenchmarkEntry): HistoryEntry | undefined {
+  return entry.history.at(-1);
+}
+
+function trendIcon(entry: BenchmarkEntry): string {
+  if (entry.history.length < 2) return '—';
+  const prev = entry.history.at(-2);
+  const curr = entry.history.at(-1);
+  if (!prev || !curr) return '—';
+  if (curr.overallScore > prev.overallScore) return '↑';
+  if (curr.overallScore < prev.overallScore) return '↓';
+  return '→';
+}
+
+function trendClass(entry: BenchmarkEntry): string {
+  const icon = trendIcon(entry);
+  if (icon === '↑') return 'text-green-400';
+  if (icon === '↓') return 'text-red-400';
+  return 'text-slate-400';
+}
+
+function scoreClass(score: number): string {
+  if (score >= 7) return 'text-green-400';
+  if (score >= 5) return 'text-yellow-400';
+  return 'text-red-400';
+}
+
+function sourceLabel(source: string): string {
+  const labels: Record<string, string> = {
+    scheduled: '📅 Scheduled',
+    pr: '🔀 Pull Request',
+    manual: '🖐 Manual',
+    'slash-command': '💬 /evaluate',
+  };
+  return labels[source] ?? source;
+}
+
+const groups = [
+  { label: '📚 Skills', entries: skills },
+  { label: '🔌 Plugins', entries: plugins },
+  { label: '📋 Instructions', entries: instructions },
+].filter(g => g.entries.length > 0);
+
+const summaryJson = JSON.stringify(summary);
+---
+
+<BaseLayout title="Benchmarks">
+  <div class="space-y-8">
+    <!-- Overview Banner -->
+    <section class="bg-slate-800 border border-slate-700 p-6 rounded-lg">
+      <p class="text-lg text-slate-300 mb-4">
+        Automated LLM evaluation results for skills, plugins, and instructions.
+        Runs weekly and on every pull request that modifies assets.
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+        <div class="bg-slate-700 rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-blue-400">{totalEntries}</div>
+          <div class="text-sm text-slate-400 mt-1">Total Assets Evaluated</div>
+        </div>
+        <div class="bg-slate-700 rounded-lg p-4 text-center">
+          <div class={`text-3xl font-bold ${globalPassRate !== null ? (globalPassRate >= 80 ? 'text-green-400' : globalPassRate >= 50 ? 'text-yellow-400' : 'text-red-400') : 'text-slate-400'}`}>
+            {globalPassRate !== null ? `${globalPassRate}%` : '—'}
+          </div>
+          <div class="text-sm text-slate-400 mt-1">Global Pass Rate</div>
+        </div>
+        <div class="bg-slate-700 rounded-lg p-4 text-center">
+          <div class="text-xl font-bold text-slate-300">{lastRunDate}</div>
+          <div class="text-sm text-slate-400 mt-1">Last Run Date</div>
+        </div>
+      </div>
+    </section>
+
+    {totalEntries === 0 && (
+      <section class="bg-slate-800 border border-slate-700 p-8 rounded-lg text-center">
+        <div class="text-4xl mb-4">🔬</div>
+        <h3 class="text-xl font-bold text-slate-300 mb-2">No Evaluations Yet</h3>
+        <p class="text-slate-400">
+          Evaluation results will appear here after the first pipeline run.
+          The pipeline runs automatically every Monday at 06:00 UTC, or when assets change in a pull request.
+        </p>
+        <div class="mt-6 flex flex-wrap justify-center gap-3 text-sm text-slate-500">
+          <span class="bg-slate-700 px-3 py-1 rounded-full">📅 Weekly on Mondays</span>
+          <span class="bg-slate-700 px-3 py-1 rounded-full">🔀 On PR changes</span>
+          <span class="bg-slate-700 px-3 py-1 rounded-full">💬 Via /evaluate comment</span>
+          <span class="bg-slate-700 px-3 py-1 rounded-full">🖐 Manual dispatch</span>
+        </div>
+      </section>
+    )}
+
+    <!-- Asset Tables -->
+    {groups.map(({ label, entries }) => (
+      <section class="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+        <div class="p-4 border-b border-slate-700">
+          <h3 class="text-lg font-bold text-slate-100">{label}</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-700 text-slate-300">
+                <th class="text-left px-4 py-3">Name</th>
+                <th class="text-center px-4 py-3">Score</th>
+                <th class="text-center px-4 py-3">Pass Rate</th>
+                <th class="text-center px-4 py-3">Trend</th>
+                <th class="text-center px-4 py-3">Status</th>
+                <th class="text-center px-4 py-3">Model</th>
+                <th class="text-center px-4 py-3">Last Run</th>
+                <th class="text-center px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry) => {
+                const latest = getLatest(entry);
+                return (
+                  <>
+                    <tr class="border-t border-slate-700 hover:bg-slate-700/40 transition">
+                      <td class="px-4 py-3">
+                        <div class="font-medium text-slate-200">{formatName(entry.name)}</div>
+                        <div class="text-xs text-slate-500 font-mono">{entry.id}</div>
+                      </td>
+                      <td class="text-center px-4 py-3 font-mono">
+                        {latest ? (
+                          <span class={`font-bold ${scoreClass(latest.overallScore)}`}>
+                            {formatScore(latest.overallScore)}/10
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td class="text-center px-4 py-3">
+                        {latest ? formatPassRate(latest.passRate) : '—'}
+                      </td>
+                      <td class={`text-center px-4 py-3 text-lg font-bold ${trendClass(entry)}`}>
+                        {trendIcon(entry)}
+                      </td>
+                      <td class="text-center px-4 py-3">
+                        {latest ? (
+                          latest.passRate === 1.0 ? (
+                            <span class="inline-block bg-green-900 text-green-300 px-2 py-1 rounded text-xs font-bold">✅ PASS</span>
+                          ) : (
+                            <span class="inline-block bg-red-900 text-red-300 px-2 py-1 rounded text-xs font-bold">❌ FAIL</span>
+                          )
+                        ) : (
+                          <span class="inline-block bg-slate-700 text-slate-400 px-2 py-1 rounded text-xs">—</span>
+                        )}
+                      </td>
+                      <td class="text-center px-4 py-3 text-xs font-mono text-slate-400">
+                        {latest?.model ?? '—'}
+                      </td>
+                      <td class="text-center px-4 py-3 text-xs text-slate-400">
+                        {latest
+                          ? new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                          : '—'}
+                      </td>
+                      <td class="text-center px-4 py-3">
+                        {latest && latest.scenarios.length > 0 && (
+                          <button
+                            class="text-xs text-blue-400 hover:text-blue-300 transition whitespace-nowrap"
+                            data-toggle={entry.id}
+                          >
+                            ▶ Details
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                    {latest && latest.scenarios.length > 0 && (
+                      <tr id={`row-${entry.id}`} class="hidden border-t border-slate-700 bg-slate-800/80">
+                        <td colspan="8" class="px-6 py-4">
+                          <div class="text-xs text-slate-500 mb-3">
+                            {sourceLabel(latest.source)} •&nbsp;
+                            <a
+                              href={latest.commit.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="font-mono hover:text-blue-400 transition"
+                            >
+                              {latest.commit.sha.slice(0, 7)}
+                            </a>
+                            &nbsp;• {latest.tokens.input.toLocaleString()} input / {latest.tokens.output.toLocaleString()} output tokens
+                          </div>
+                          <div class="space-y-2">
+                            {latest.scenarios.map((scenario) => (
+                              <div class="bg-slate-700 rounded p-3 flex items-start justify-between gap-4">
+                                <div>
+                                  <div class="font-medium text-slate-200 text-xs">{scenario.scenarioName}</div>
+                                  <div class="text-xs text-slate-400 mt-0.5">{scenario.description}</div>
+                                </div>
+                                <span class={`shrink-0 text-xs font-bold px-2 py-1 rounded ${scenario.passed ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
+                                  {scenario.passed ? '✅' : '❌'} {formatScore(scenario.averageScore)}/10
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ))}
+
+    <!-- Score History Chart -->
+    {totalEntries > 0 && (
+      <section class="bg-slate-800 border border-slate-700 p-6 rounded-lg">
+        <h3 class="text-xl font-bold text-slate-100 mb-4">📈 Score History</h3>
+        <canvas id="historyChart" class="w-full" height="300"></canvas>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<script define:vars={{ summaryJson }}>
+  // Toggle detail rows
+  document.querySelectorAll('[data-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-toggle');
+      const row = document.getElementById(`row-${id}`);
+      if (!row) return;
+      const hidden = row.classList.toggle('hidden');
+      btn.textContent = hidden ? '▶ Details' : '▼ Details';
+    });
+  });
+
+  // Chart.js score history
+  const chartCanvas = document.getElementById('historyChart');
+  if (chartCanvas) {
+    import('https://cdn.jsdelivr.net/npm/chart.js@4/+esm').then(({ Chart, registerables }) => {
+      Chart.register(...registerables);
+      const summary = JSON.parse(summaryJson);
+      const COLORS = ['#60a5fa','#34d399','#f59e0b','#f87171','#a78bfa','#fb7185','#38bdf8','#4ade80'];
+      const datasets = summary.entries.slice(0, 8).map((entry, i) => ({
+        label: entry.name,
+        data: entry.history.map(h => ({ x: new Date(h.date).getTime(), y: parseFloat(h.overallScore.toFixed(2)) })),
+        borderColor: COLORS[i % COLORS.length],
+        backgroundColor: COLORS[i % COLORS.length] + '20',
+        tension: 0.3,
+        fill: false,
+        pointRadius: 4,
+      }));
+
+      new Chart(chartCanvas, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'time',
+              ticks: { color: '#94a3b8' },
+              grid: { color: '#334155' },
+            },
+            y: {
+              min: 0,
+              max: 10,
+              ticks: { color: '#94a3b8' },
+              grid: { color: '#334155' },
+            },
+          },
+          plugins: {
+            legend: { labels: { color: '#e2e8f0', boxWidth: 12 } },
+            tooltip: { mode: 'index', intersect: false },
+          },
+        },
+      });
+    });
+  }
+</script>
