@@ -1,7 +1,8 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { GitClient } from '../adapters/git-client.js';
-import type { AssetKind, DiscoveredEntry, DiscoveryResult } from './types.js';
+import type { AssetKind, BenchmarkSummary, DiscoveredEntry, DiscoveryResult } from './types.js';
+import { logger } from '../utils/logger.js';
 
 interface AssetPattern {
   regex: RegExp;
@@ -181,4 +182,59 @@ export async function discoverAllEntries(repoRoot: string): Promise<DiscoveredEn
   }
 
   return entries;
+}
+
+function getLastEvaluatedCommit(benchmarkSummary: BenchmarkSummary, entryId: string): string | null {
+  const entry = benchmarkSummary.entries.find((e) => e.id === entryId);
+  if (!entry || entry.history.length === 0) return null;
+  const lastEntry = entry.history[entry.history.length - 1];
+  return lastEntry?.commit.sha ?? null;
+}
+
+export async function filterByPreviousResults(
+  entries: DiscoveredEntry[],
+  benchmarkSummaryPath: string,
+  gitClient: GitClient,
+): Promise<DiscoveredEntry[]> {
+  let benchmarkSummary: BenchmarkSummary = { lastUpdated: '', entries: [] };
+
+  if (existsSync(benchmarkSummaryPath)) {
+    try {
+      benchmarkSummary = JSON.parse(readFileSync(benchmarkSummaryPath, 'utf-8')) as BenchmarkSummary;
+    } catch {
+      logger.warn({ benchmarkSummaryPath }, 'Failed to parse benchmark summary — treating all entries as new');
+      return entries;
+    }
+  } else {
+    logger.info({ benchmarkSummaryPath }, 'No benchmark summary found — treating all entries as new');
+    return entries;
+  }
+
+  const filtered: DiscoveredEntry[] = [];
+
+  for (const entry of entries) {
+    const lastCommitSha = getLastEvaluatedCommit(benchmarkSummary, entry.id);
+
+    if (!lastCommitSha) {
+      logger.info({ id: entry.id }, 'No previous result found — including in evaluation');
+      filtered.push(entry);
+      continue;
+    }
+
+    const changedFiles = await gitClient.getChangedFilesSince(lastCommitSha);
+    const relevantPaths = [entry.assetPath, entry.testPath].filter(Boolean) as string[];
+
+    const relevantChangedFiles = changedFiles.filter((f) =>
+      relevantPaths.some((p) => f === p || f.startsWith(`${p}/`)),
+    );
+
+    if (relevantChangedFiles.length > 0) {
+      logger.info({ id: entry.id, lastCommitSha, relevantChangedFiles }, 'Asset changed since last evaluation — including');
+      filtered.push({ ...entry, changedFiles: relevantChangedFiles });
+    } else {
+      logger.info({ id: entry.id, lastCommitSha }, 'No changes since last evaluation — skipping');
+    }
+  }
+
+  return filtered;
 }
