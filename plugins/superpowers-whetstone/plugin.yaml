@@ -1,6 +1,6 @@
 name: superpowers-whetstone
 version: 1.0.0
-description: Collection of skills and workflows for mastering outside-in TDD with Superpowers, enhancing testing, DDD, and productivity in software development
+description: Collection of tools to help you practice outside-in TDD and mutation testing with Superpowers.
 author: Sebastien DEGODEZ
 tags:
   - outside-in-tdd
