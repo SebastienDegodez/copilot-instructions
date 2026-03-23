@@ -171,6 +171,7 @@ jobs:
           if [[ "$EVALUATE_ALL" == "true" || "$EVENT_NAME" == "schedule" || "$EVENT_NAME" == "workflow_dispatch" ]]; then
             npx tsx src/index.ts discover \
               --all \
+              --benchmark-summary ${{ github.workspace }}/website/src/data/benchmarks/summary.json \
               --repo-root ${{ github.workspace }} \
               --output /tmp/discovered.json
           else

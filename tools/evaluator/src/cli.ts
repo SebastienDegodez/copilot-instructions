@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { writeFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { discoverChangedEntries, discoverAllEntries } from './core/discoverer.js';
+import { discoverChangedEntries, discoverAllEntries, filterByPreviousResults } from './core/discoverer.js';
 import { runEvaluation } from './core/runner.js';
 import { createGitClient } from './adapters/git-client.js';
 import { createFileReader } from './adapters/file-reader.js';
@@ -32,18 +32,26 @@ export function buildCLI(): Command {
     .option('--all', 'Discover all assets regardless of changes', false)
     .option('--repo-root <path>', 'Repository root path', process.cwd())
     .option('--output <path>', 'Output JSON file path', 'discovered.json')
-    .action(async (opts: { baseRef: string; headRef: string; all: boolean; repoRoot: string; output: string }) => {
+    .option('--benchmark-summary <path>', 'Path to benchmark summary.json; when provided with --all, skips entries with an existing result unless their asset has changed')
+    .action(async (opts: { baseRef: string; headRef: string; all: boolean; repoRoot: string; output: string; benchmarkSummary?: string }) => {
       try {
         const gitClient = createGitClient(opts.repoRoot);
         let result;
 
         if (opts.all) {
-          const entries = await discoverAllEntries(opts.repoRoot);
+          let entries = await discoverAllEntries(opts.repoRoot);
+
+          if (opts.benchmarkSummary) {
+            entries = await filterByPreviousResults(entries, opts.benchmarkSummary, gitClient);
+          }
+
           result = {
             entries,
             isInfraChange: false,
-            skipped: false,
-            reason: 'Discovering all assets (--all flag)',
+            skipped: entries.length === 0,
+            reason: opts.benchmarkSummary
+              ? `Discovering all assets filtered by previous results (${entries.length} to evaluate)`
+              : 'Discovering all assets (--all flag)',
           };
         } else {
           result = await discoverChangedEntries(
