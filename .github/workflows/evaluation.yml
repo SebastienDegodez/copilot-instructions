@@ -78,13 +78,12 @@ jobs:
 
       - name: Post pending status
         if: steps.discover.outputs.skipped == 'false'
-        uses: myrotvorets/set-commit-status-action@v2.0.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          sha: ${{ github.sha }}
-          status: pending
-          context: 'evaluation / results'
-          description: 'Evaluating ${{ steps.discover.outputs.entries }} changed asset(s)…'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -d "{\"state\":\"pending\",\"context\":\"evaluation / results\",\"description\":\"Evaluating ${{ steps.discover.outputs.entries }} changed asset(s)…\"}"
 
   # ── Slash command gate ────────────────────────────────────────────────────
   gate:
@@ -223,23 +222,30 @@ jobs:
     steps:
       - name: Post success status
         if: needs.run-evaluation.result == 'success'
-        uses: myrotvorets/set-commit-status-action@v2.0.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          sha: ${{ github.sha }}
-          status: success
-          context: 'evaluation / results'
-          description: 'All evaluations passed ✅'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -d '{"state":"success","context":"evaluation / results","description":"All evaluations passed ✅"}'
 
       - name: Post failure status
-        if: needs.run-evaluation.result != 'success'
-        uses: myrotvorets/set-commit-status-action@v2.0.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          sha: ${{ github.sha }}
-          status: failure
-          context: 'evaluation / results'
-          description: 'Some evaluations failed ❌'
+        if: needs.run-evaluation.result == 'failure'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -d '{"state":"failure","context":"evaluation / results","description":"Some evaluations failed ❌"}'
+
+      - name: Post skipped status
+        if: needs.run-evaluation.result == 'skipped'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -d '{"state":"success","context":"evaluation / results","description":"Evaluation skipped (no API key configured)"}'
 
   # ── Publish benchmark data ────────────────────────────────────────────────
   publish-benchmark:
