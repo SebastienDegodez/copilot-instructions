@@ -13,7 +13,7 @@ on:
       evaluate_all:
         description: "Force evaluate all items (ignore cache)"
         type: boolean
-        default: false
+        default: true
       model:
         description: "LLM model to use"
         type: string
@@ -117,7 +117,8 @@ For each discovered asset (skill, instruction, plugin) that has a `tests/` scena
 2. Find its entry in `benchmark_summary` (from cache-memory)
 3. Check the latest history entry's date and compare with current file hash
 
-**Skip decision logic** (unless `evaluate_all` is `true`):
+**Skip decision logic** (unless `evaluate_all` is `true` or trigger is `manual`):
+- If the trigger source is `manual` (i.e., `${{ github.event_name }}` is `workflow_dispatch`) → **EVALUATE** (manual run always evaluates all)
 - If the entry has NO history → **EVALUATE** (new asset)
 - If `evaluate_all` input is `true` → **EVALUATE** (forced)
 - Otherwise, check both conditions:
