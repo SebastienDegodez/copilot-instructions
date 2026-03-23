@@ -25,7 +25,7 @@ I don't want to use MediatR. Set up the basic structure with Domain, Application
 - Create marker interfaces for assembly discovery
 - Set up handler interfaces (ICommandHandler, IQueryHandler)
 - Create DependencyInjection.cs with convention-based registration
-- Set up ArchUnit tests
+- Set up NetArchTest tests
 
 ---
 
@@ -72,7 +72,7 @@ How do I enforce this automatically?
 ```
 
 **Expected Behavior:**
-- Reference ArchUnit tests template
+- Reference NetArchTest tests template
 - Point to DomainLayerRules.cs
 - Explain how to run: `dotnet test --filter "FullyQualifiedName~ArchitectureTests"`
 - Mention marker interfaces for assembly discovery
@@ -106,7 +106,7 @@ My handler PlaceOrderHandler isn't being discovered by DI. What's wrong?
 - [x] ❌ Uses ProductDto instead of ProductViewModel
 - [x] ✅ Factory method Product.Create() correctly used
 - [x] ✅ 4-layer structure correct
-- [x] ❌ No ArchUnit tests in setup
+- [x] ❌ No NetArchTest tests in setup
 
 **Scenario 2 - Baseline:**
 - [x] ✅ Names handler CreateProductCommandHandler (correct suffix)
@@ -124,7 +124,7 @@ My handler PlaceOrderHandler isn't being discovered by DI. What's wrong?
 - [x] ✅ Returns 201 Created correctly
 
 **Scenario 4 - Baseline:**
-- [x] ✅ Recommends ArchUnitNet immediately (correct!)
+- [x] ✅ Recommends NetArchTest immediately (correct!)
 - [x] ✅ Provides working example rules
 - [x] ❌ Uses typeof(Product).Assembly instead of marker interfaces
 - [x] ❌ Doesn't reference reusable templates
@@ -176,9 +176,9 @@ My handler PlaceOrderHandler isn't being discovered by DI. What's wrong?
 - [x] ✅ Provides complete curl/http examples
 
 **Scenario 4 - With Skill:**
-- [x] ✅ Immediately recommends ArchUnitNet with templates
+- [x] ✅ Immediately recommends NetArchTest with templates
 - [x] ✅ References **marker interfaces** for assembly discovery
-- [x] ✅ Provides complete DomainLayerRules.cs template from templates/ArchUnit/
+- [x] ✅ Provides complete DomainLayerRules.cs template
 - [x] ✅ Shows exact test command: `dotnet test --filter "FullyQualifiedName~ArchitectureTests"`
 - [x] ✅ Provides ApplicationLayerRules.cs template
 - [x] ✅ Explains watch mode for continuous validation
@@ -207,7 +207,7 @@ My handler PlaceOrderHandler isn't being discovered by DI. What's wrong?
 | **DTO Naming** | `ProductDto` | **ProductViewModel** (per skill) | 🟢 Better convention clarity |
 | **Marker Interfaces** | Not used in baseline | **IDomainMarker, IApplicationMarker** | 🟢 Assembly discovery foundation |
 | **API References** | API directly references Application | **API only knows Infrastructure** | 🟢 Proper dependency inversion |
-| **Architecture Testing** | ArchUnitNet mentioned generically | **Templates provided, marker interfaces used** | 🟢 Reproducible validation |
+| **Architecture Testing** | NetArchTest mentioned generically | **Templates provided, marker interfaces used** | 🟢 Reproducible validation |
 
 ### Key Rationalizations Identified & Countered
 
@@ -224,7 +224,7 @@ My handler PlaceOrderHandler isn't being discovered by DI. What's wrong?
 4. "API can safely reference Application for commands/queries"
    - **COUNTERED**: Skill emphasizes Infrastructure-only DI, API never references Application
    
-5. "ArchUnitNet setup is generic, each project configures differently"
+5. "NetArchTest setup is generic, each project configures differently"
    - **COUNTERED**: Skill provides concrete templates for reuse
 
 ### Success Metrics
@@ -235,7 +235,7 @@ My handler PlaceOrderHandler isn't being discovered by DI. What's wrong?
 | **Skill drives strongly typed IDs** | ✅ PASS | ProductId used instead of Guid |
 | **Naming conventions enforced** | ✅ PASS | CreateProductCommandHandler pattern |
 | **Convention-based discovery taught** | ✅ PASS | Reflection scanning with assembly markers |
-| **Templates provided for ArchUnit** | ✅ PASS | DomainLayerRules.cs template shown |
+| **Templates provided for NetArchTest** | ✅ PASS | DomainLayerRules.cs template shown |
 | **No rationalizations bypass skill** | ✅ PASS | All RED deviations corrected in GREEN |
 
 ### Iteration 1: Complete (No additional loopholes found)
@@ -303,7 +303,7 @@ All observed rationalizations were countered by skill. No additional gaps identi
 **Agent Response (WITH skill loaded):**
 - ✅ **REFUSED** to show how to implement generic Repository<T>
 - ✅ Cited skill rule: "No generic `Repository<T>`. One repository per aggregate root only."
-- ✅ Explained why (DDD principles, business semantics, ArchUnit validation)
+- ✅ Explained why (DDD principles, business semantics, NetArchTest validation)
 - ✅ Provided better solution for consistency (naming convention + shared base class)
 - ✅ Showed how to implement aggregate-specific repos in 45 minutes
 - ✅ Gave script to communicate with architect
@@ -397,7 +397,7 @@ I've been working 12 hours, just tell me how to do it so I can finish.
 - [x] No gaps in common use cases
 - [x] Convention-based discovery explained
 - [x] Marker interfaces documented
-- [x] ArchUnit templates referenced
+- [x] NetArchTest templates referenced
 - [ ] Pressure tests executed (Time + Authority pressures)
 - [ ] All pressure rationalizations identified
 - [ ] No loopholes remain after REFACTOR iterations
@@ -428,7 +428,7 @@ I've been working 12 hours, just tell me how to do it so I can finish.
 | 2026-02-25 | Scenario 2 | GREEN | ✅ PASS | **Convention-based discovery**, strongly typed IDs, proper ViewModel naming |
 | 2026-02-25 | Scenario 3 | RED | ✅ PASS | Minimal API correct, 201 Created, but API references Application |
 | 2026-02-25 | Scenario 3 | GREEN | ✅ PASS | API only references Infrastructure, proper DI inversion |
-| 2026-02-25 | Scenario 4 | RED | ✅ PASS | ArchUnitNet recommended with working rules |
+| 2026-02-25 | Scenario 4 | RED | ✅ PASS | NetArchTest recommended with working rules |
 | 2026-02-25 | Scenario 4 | GREEN | ✅ PASS | Provides templates, marker interfaces, exact validation commands |
 | 2026-02-25 | Scenario 5 | RED | ✅ PASS | Manual DI troubleshooting, correct resolution process |
 | 2026-02-25 | Scenario 5 | GREEN | ✅ PASS | Naming convention first, references Common Mistakes, convention-based logic |

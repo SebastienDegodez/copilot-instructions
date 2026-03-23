@@ -62,10 +62,6 @@ dotnet sln add "tests/$ProjectName.UnitTests/$ProjectName.UnitTests.csproj"
 dotnet new xunit -n "$ProjectName.IntegrationTests" -o "tests/$ProjectName.IntegrationTests" -f net10.0
 dotnet sln add "tests/$ProjectName.IntegrationTests/$ProjectName.IntegrationTests.csproj"
 
-# ArchitectureTests
-dotnet new xunit -n "$ProjectName.ArchitectureTests" -o "tests/$ProjectName.ArchitectureTests" -f net10.0
-dotnet sln add "tests/$ProjectName.ArchitectureTests/$ProjectName.ArchitectureTests.csproj"
-
 # Add project references
 Write-Host "`n🔗 Configuring project references..." -ForegroundColor Yellow
 
@@ -84,39 +80,31 @@ dotnet add "src/$ProjectName.Api/$ProjectName.Api.csproj" reference "src/$Projec
 dotnet add "tests/$ProjectName.UnitTests/$ProjectName.UnitTests.csproj" reference "src/$ProjectName.Application/$ProjectName.Application.csproj"
 dotnet add "tests/$ProjectName.UnitTests/$ProjectName.UnitTests.csproj" reference "src/$ProjectName.Domain/$ProjectName.Domain.csproj"
 
-# IntegrationTests -> API
+# IntegrationTests -> All layers (API for endpoint tests, all layers for architecture tests)
 dotnet add "tests/$ProjectName.IntegrationTests/$ProjectName.IntegrationTests.csproj" reference "src/$ProjectName.Api/$ProjectName.Api.csproj"
-
-# ArchitectureTests -> All layers
-dotnet add "tests/$ProjectName.ArchitectureTests/$ProjectName.ArchitectureTests.csproj" reference "src/$ProjectName.Domain/$ProjectName.Domain.csproj"
-dotnet add "tests/$ProjectName.ArchitectureTests/$ProjectName.ArchitectureTests.csproj" reference "src/$ProjectName.Application/$ProjectName.Application.csproj"
-dotnet add "tests/$ProjectName.ArchitectureTests/$ProjectName.ArchitectureTests.csproj" reference "src/$ProjectName.Infrastructure/$ProjectName.Infrastructure.csproj"
-dotnet add "tests/$ProjectName.ArchitectureTests/$ProjectName.ArchitectureTests.csproj" reference "src/$ProjectName.Api/$ProjectName.Api.csproj"
+dotnet add "tests/$ProjectName.IntegrationTests/$ProjectName.IntegrationTests.csproj" reference "src/$ProjectName.Domain/$ProjectName.Domain.csproj"
+dotnet add "tests/$ProjectName.IntegrationTests/$ProjectName.IntegrationTests.csproj" reference "src/$ProjectName.Application/$ProjectName.Application.csproj"
+dotnet add "tests/$ProjectName.IntegrationTests/$ProjectName.IntegrationTests.csproj" reference "src/$ProjectName.Infrastructure/$ProjectName.Infrastructure.csproj"
 
 # Add NuGet packages
 Write-Host "`n📦 Adding NuGet packages..." -ForegroundColor Yellow
 
 # UnitTests packages
 dotnet add "tests/$ProjectName.UnitTests/$ProjectName.UnitTests.csproj" package FakeItEasy
-dotnet add "tests/$ProjectName.UnitTests/$ProjectName.UnitTests.csproj" package FluentAssertions
 
 # IntegrationTests packages
 dotnet add "tests/$ProjectName.IntegrationTests/$ProjectName.IntegrationTests.csproj" package Microsoft.AspNetCore.Mvc.Testing
-dotnet add "tests/$ProjectName.IntegrationTests/$ProjectName.IntegrationTests.csproj" package FluentAssertions
-
-# ArchitectureTests packages
-dotnet add "tests/$ProjectName.ArchitectureTests/$ProjectName.ArchitectureTests.csproj" package TngTech.ArchUnitNET.xUnit
+dotnet add "tests/$ProjectName.IntegrationTests/$ProjectName.IntegrationTests.csproj" package NetArchTest.Rules
 
 # Create directory structure
 Write-Host "`n📂 Creating directory structure..." -ForegroundColor Yellow
 
 # Domain
-New-Item -ItemType Directory -Force -Path "src/$ProjectName.Domain/_Markers" | Out-Null
 New-Item -ItemType Directory -Force -Path "src/$ProjectName.Domain/Shared" | Out-Null
 
 # Application
-New-Item -ItemType Directory -Force -Path "src/$ProjectName.Application/_Markers" | Out-Null
-New-Item -ItemType Directory -Force -Path "src/$ProjectName.Application/_Contracts" | Out-Null
+New-Item -ItemType Directory -Force -Path "src/$ProjectName.Application/Shared" | Out-Null
+New-Item -ItemType Directory -Force -Path "src/$ProjectName.Application/Features" | Out-Null
 
 # Infrastructure
 New-Item -ItemType Directory -Force -Path "src/$ProjectName.Infrastructure/Persistence/Repositories" | Out-Null
@@ -128,10 +116,7 @@ New-Item -ItemType Directory -Force -Path "tests/$ProjectName.UnitTests/Applicat
 # IntegrationTests
 New-Item -ItemType Directory -Force -Path "tests/$ProjectName.IntegrationTests/Api" | Out-Null
 
-# ArchitectureTests
-New-Item -ItemType Directory -Force -Path "tests/$ProjectName.ArchitectureTests/ArchUnit" | Out-Null
-
-# Copy marker interfaces
+# Create marker interfaces
 Write-Host "`n📄 Creating marker interfaces..." -ForegroundColor Yellow
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -147,7 +132,7 @@ namespace $ProjectName.Domain;
 /// </summary>
 public interface IDomainMarker { }
 "@
-Set-Content -Path "src/$ProjectName.Domain/_Markers/IDomainMarker.cs" -Value $domainMarker
+Set-Content -Path "src/$ProjectName.Domain/IDomainMarker.cs" -Value $domainMarker
 
 # IApplicationMarker
 $applicationMarker = @"
@@ -159,13 +144,13 @@ namespace $ProjectName.Application;
 /// </summary>
 public interface IApplicationMarker { }
 "@
-Set-Content -Path "src/$ProjectName.Application/_Markers/IApplicationMarker.cs" -Value $applicationMarker
+Set-Content -Path "src/$ProjectName.Application/IApplicationMarker.cs" -Value $applicationMarker
 
-# Create CQRS interfaces
+# Create CQRS interfaces in Shared
 Write-Host "`n📝 Creating CQRS handler interfaces..." -ForegroundColor Yellow
 
 $commandHandler = @"
-namespace $ProjectName.Application._Contracts;
+namespace $ProjectName.Application.Shared;
 
 /// <summary>
 /// Handler for commands that don't return a result (void operations).
@@ -183,10 +168,10 @@ public interface ICommandHandler<in TCommand, TResult>
     Task<TResult> HandleAsync(TCommand command, CancellationToken cancellationToken = default);
 }
 "@
-Set-Content -Path "src/$ProjectName.Application/_Contracts/ICommandHandler.cs" -Value $commandHandler
+Set-Content -Path "src/$ProjectName.Application/Shared/ICommandHandler.cs" -Value $commandHandler
 
 $queryHandler = @"
-namespace $ProjectName.Application._Contracts;
+namespace $ProjectName.Application.Shared;
 
 /// <summary>
 /// Handler for queries (read operations).
@@ -196,75 +181,215 @@ public interface IQueryHandler<in TQuery, TResult>
     Task<TResult> HandleAsync(TQuery query, CancellationToken cancellationToken = default);
 }
 "@
-Set-Content -Path "src/$ProjectName.Application/_Contracts/IQueryHandler.cs" -Value $queryHandler
+Set-Content -Path "src/$ProjectName.Application/Shared/IQueryHandler.cs" -Value $queryHandler
 
-# Copy ArchUnit rules templates
-Write-Host "`n🏛️ Creating ArchUnit test rules..." -ForegroundColor Yellow
+# Create Bus interfaces
+Write-Host "`n📝 Creating CQRS bus interfaces..." -ForegroundColor Yellow
 
-$archUnitTemplatesDir = Join-Path $templatesDir "ArchUnit"
-if (Test-Path $archUnitTemplatesDir) {
-    Copy-Item "$archUnitTemplatesDir/*" "tests/$ProjectName.ArchitectureTests/ArchUnit/" -Force
-    
-    # Replace placeholder project name in templates
-    Get-ChildItem "tests/$ProjectName.ArchitectureTests/ArchUnit/*.cs" | ForEach-Object {
-        $content = Get-Content $_.FullName -Raw
-        $content = $content -replace '\[ProjectName\]', $ProjectName
-        Set-Content $_.FullName -Value $content
-    }
-}
+$commandBus = @"
+namespace $ProjectName.Application.Shared;
 
-# Create CleanArchitectureTests
-$cleanArchTests = @"
-using Xunit;
-
-namespace $ProjectName.ArchitectureTests;
-
-public sealed class CleanArchitectureTests
+/// <summary>
+/// Dispatches commands to their registered handlers.
+/// </summary>
+public interface ICommandBus
 {
-    [Fact]
-    public void Domain_ShouldNotDependOnOtherLayers()
+    Task PublishAsync<TCommand>(TCommand command, CancellationToken cancellationToken = default);
+    Task<TResult> PublishAsync<TCommand, TResult>(TCommand command, CancellationToken cancellationToken = default);
+}
+"@
+Set-Content -Path "src/$ProjectName.Application/Shared/ICommandBus.cs" -Value $commandBus
+
+$queryBus = @"
+namespace $ProjectName.Application.Shared;
+
+/// <summary>
+/// Dispatches queries to their registered handlers.
+/// </summary>
+public interface IQueryBus
+{
+    Task<TResult> SendAsync<TQuery, TResult>(TQuery query, CancellationToken cancellationToken = default);
+}
+"@
+Set-Content -Path "src/$ProjectName.Application/Shared/IQueryBus.cs" -Value $queryBus
+
+# Create Bus implementations
+Write-Host "`n📝 Creating CQRS bus implementations..." -ForegroundColor Yellow
+
+New-Item -ItemType Directory -Force -Path "src/$ProjectName.Infrastructure/CQRS" | Out-Null
+
+$commandBusImpl = @"
+using Microsoft.Extensions.DependencyInjection;
+using $ProjectName.Application.Shared;
+
+namespace $ProjectName.Infrastructure.CQRS;
+
+/// <summary>
+/// Default implementation of command bus using DI to resolve handlers.
+/// </summary>
+public sealed class CommandBus : ICommandBus
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public CommandBus(IServiceProvider serviceProvider)
     {
-        ArchUnit.DomainLayerRules.ShouldNotDependOnOtherLayers();
+        _serviceProvider = serviceProvider;
     }
 
-    [Fact]
-    public void Application_ShouldOnlyDependOnDomain()
+    public async Task PublishAsync<TCommand>(TCommand command, CancellationToken cancellationToken = default)
     {
-        ArchUnit.ApplicationLayerRules.ShouldOnlyDependOnDomain();
+        ArgumentNullException.ThrowIfNull(command);
+        var handler = _serviceProvider.GetRequiredService<ICommandHandler<TCommand>>();
+        await handler.HandleAsync(command, cancellationToken);
     }
 
-    [Fact]
-    public void Api_ShouldNotReferenceApplication()
+    public async Task<TResult> PublishAsync<TCommand, TResult>(TCommand command, CancellationToken cancellationToken = default)
     {
-        ArchUnit.ApiLayerRules.ShouldNotReferenceApplication();
-    }
-
-    [Fact]
-    public void Infrastructure_CanReferenceDomainAndApplication()
-    {
-        ArchUnit.InfrastructureLayerRules.CanReferenceDomainAndApplication();
-    }
-
-    [Fact]
-    public void ViewModels_ShouldEndWithViewModel()
-    {
-        ArchUnit.NamingConventionRules.ViewModelsShouldEndWithViewModel();
-    }
-
-    [Fact]
-    public void CommandHandlers_ShouldEndWithCommandHandler()
-    {
-        ArchUnit.NamingConventionRules.CommandHandlersShouldEndWithCommandHandler();
-    }
-
-    [Fact]
-    public void QueryHandlers_ShouldEndWithQueryHandler()
-    {
-        ArchUnit.NamingConventionRules.QueryHandlersShouldEndWithQueryHandler();
+        ArgumentNullException.ThrowIfNull(command);
+        var handler = _serviceProvider.GetRequiredService<ICommandHandler<TCommand, TResult>>();
+        return await handler.HandleAsync(command, cancellationToken);
     }
 }
 "@
-Set-Content -Path "tests/$ProjectName.ArchitectureTests/CleanArchitectureTests.cs" -Value $cleanArchTests
+Set-Content -Path "src/$ProjectName.Infrastructure/CQRS/CommandBus.cs" -Value $commandBusImpl
+
+$queryBusImpl = @"
+using Microsoft.Extensions.DependencyInjection;
+using $ProjectName.Application.Shared;
+
+namespace $ProjectName.Infrastructure.CQRS;
+
+/// <summary>
+/// Default implementation of query bus using DI to resolve handlers.
+/// </summary>
+public sealed class QueryBus : IQueryBus
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public QueryBus(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public async Task<TResult> SendAsync<TQuery, TResult>(TQuery query, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        var handler = _serviceProvider.GetRequiredService<IQueryHandler<TQuery, TResult>>();
+        return await handler.HandleAsync(query, cancellationToken);
+    }
+}
+"@
+Set-Content -Path "src/$ProjectName.Infrastructure/CQRS/QueryBus.cs" -Value $queryBusImpl
+
+# Create DependencyInjection.cs
+Write-Host "`n📝 Creating DependencyInjection.cs..." -ForegroundColor Yellow
+
+$dependencyInjection = @"
+using Microsoft.Extensions.DependencyInjection;
+using $ProjectName.Application.Shared;
+using $ProjectName.Application;
+using $ProjectName.Infrastructure.CQRS;
+
+namespace $ProjectName.Infrastructure;
+
+public static class DependencyInjection
+{
+    /// <summary>
+    /// Registers a single command or query handler.
+    /// </summary>
+    public static IServiceCollection AddHandler<THandler>(this IServiceCollection services)
+        where THandler : class
+    {
+        var handlerType = typeof(THandler);
+        var handlerInterfaces = handlerType.GetInterfaces()
+            .Where(i => i.IsGenericType &&
+                   (i.GetGenericTypeDefinition() == typeof(ICommandHandler<>) ||
+                    i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
+                    i.GetGenericTypeDefinition() == typeof(IQueryHandler<,>)));
+
+        foreach (var @interface in handlerInterfaces)
+            services.AddScoped(@interface, handlerType);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers all command and query handlers from the Application assembly.
+    /// </summary>
+    public static IServiceCollection AddApplicationHandlers(
+        this IServiceCollection services)
+    {
+        var applicationAssembly = typeof(IApplicationMarker).Assembly;
+
+        var allTypes = applicationAssembly.GetTypes()
+            .Where(t => !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in allTypes)
+        {
+            var handlerInterfaces = type.GetInterfaces()
+                .Where(i => i.IsGenericType &&
+                       (i.GetGenericTypeDefinition() == typeof(ICommandHandler<>) ||
+                        i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
+                        i.GetGenericTypeDefinition() == typeof(IQueryHandler<,>)));
+
+            foreach (var @interface in handlerInterfaces)
+                services.AddScoped(@interface, type);
+        }
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers Infrastructure services (CQRS buses).
+    /// Does NOT register handlers - use AddHandler or AddApplicationHandlers separately.
+    /// </summary>
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services)
+    {
+        services.AddScoped<ICommandBus, CommandBus>();
+        services.AddScoped<IQueryBus, QueryBus>();
+
+        return services;
+    }
+}
+"@
+Set-Content -Path "src/$ProjectName.Infrastructure/DependencyInjection.cs" -Value $dependencyInjection
+
+# Create marker interfaces for Infrastructure and API
+$infrastructureMarker = @"
+namespace $ProjectName.Infrastructure;
+
+/// <summary>
+/// Marker interface to identify the Infrastructure assembly.
+/// Use: typeof(IInfrastructureMarker).Assembly
+/// </summary>
+public interface IInfrastructureMarker { }
+"@
+Set-Content -Path "src/$ProjectName.Infrastructure/IInfrastructureMarker.cs" -Value $infrastructureMarker
+
+$apiMarker = @"
+namespace $ProjectName.Api;
+
+/// <summary>
+/// Marker interface to identify the API assembly.
+/// Use: typeof(IApiMarker).Assembly
+/// </summary>
+public interface IApiMarker { }
+"@
+Set-Content -Path "src/$ProjectName.Api/IApiMarker.cs" -Value $apiMarker
+
+# Copy Architecture test template to IntegrationTests
+Write-Host "`n🏛️ Creating architecture tests..." -ForegroundColor Yellow
+
+$archTestTemplatesDir = Join-Path $templatesDir "IntegrationTests"
+if (Test-Path $archTestTemplatesDir) {
+    Copy-Item "$archTestTemplatesDir/ArchitectureTests.cs" "tests/$ProjectName.IntegrationTests/ArchitectureTests.cs" -Force
+    
+    # Replace placeholder project name in template
+    $content = Get-Content "tests/$ProjectName.IntegrationTests/ArchitectureTests.cs" -Raw
+    $content = $content -replace '\[ProjectName\]', $ProjectName
+    Set-Content "tests/$ProjectName.IntegrationTests/ArchitectureTests.cs" -Value $content
+}
 
 # Build to verify
 Write-Host "`n🔨 Building solution..." -ForegroundColor Yellow
@@ -273,7 +398,7 @@ dotnet build
 Write-Host "`n✅ Clean Architecture CQRS project initialized successfully!" -ForegroundColor Green
 Write-Host "`nNext steps:"
 Write-Host "  1. Review src/$ProjectName.Domain for business logic"
-Write-Host "  2. Create Commands/Queries in src/$ProjectName.Application"
+Write-Host "  2. Create Commands/Queries in src/$ProjectName.Application/Features/"
 Write-Host "  3. Implement handlers with *CommandHandler/*QueryHandler suffix"
-Write-Host "  4. Run architecture tests: dotnet test --filter 'FullyQualifiedName~ArchitectureTests'"
+Write-Host "  4. Run architecture tests: dotnet test --filter 'FullyQualifiedName~IntegrationTests'"
 Write-Host "`n📚 See .github/skills/clean-architecture-dotnet/SKILL.md for complete guide"

@@ -1,0 +1,56 @@
+{
+  "skill_name": "clean-architecture-dotnet",
+  "status": "complete",
+  "current_experiment": 4,
+  "baseline_score": 72.0,
+  "best_score": 100.0,
+  "experiments": [
+    {
+      "id": 0,
+      "score": 18,
+      "max_score": 25,
+      "pass_rate": 72.0,
+      "status": "baseline",
+      "description": "original skill — no changes"
+    },
+    {
+      "id": 1,
+      "score": 22,
+      "max_score": 25,
+      "pass_rate": 88.0,
+      "status": "keep",
+      "description": "added explicit SharedKernel section with layer table row, dependency rule, code example"
+    },
+    {
+      "id": 2,
+      "score": 25,
+      "max_score": 25,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "added Domain Events section: declare in Domain, dispatch in Application, with aggregate factory + event code"
+    },
+    {
+      "id": 3,
+      "score": 25,
+      "max_score": 25,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "added DDD vs POCO quick decision table: when to use AggregateRoot / ValueObject / plain record"
+    },
+    {
+      "id": 4,
+      "score": 25,
+      "max_score": 25,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "added SharedKernel anti-pattern to Common Mistakes: SK must not reference Domain"
+    }
+  ],
+  "eval_breakdown": [
+    {"name": "Layer identification accuracy", "pass_count": 5, "total": 5},
+    {"name": "CQRS bus discipline", "pass_count": 5, "total": 5},
+    {"name": "Shared Kernel placement", "pass_count": 5, "total": 5},
+    {"name": "Concrete C# code example", "pass_count": 5, "total": 5},
+    {"name": "Zero Iron Law violations", "pass_count": 5, "total": 5}
+  ]
+}

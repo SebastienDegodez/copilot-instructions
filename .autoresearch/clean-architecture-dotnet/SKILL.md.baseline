@@ -1,9 +1,6 @@
 ---
 name: clean-architecture-dotnet
 description: Use when domain logic leaks into API/Infrastructure, project references violate layer boundaries, or CQRS handlers/buses need implementation.
-metadata: 
-   version: 2
-   authors: ["Sébastien DEGODEZ"]
 ---
 
 # Clean Architecture in .NET
@@ -20,16 +17,6 @@ Clean Architecture organizes code into independent layers (Domain → Applicatio
 - Circular dependencies occur between projects
 - Need to isolate core business rules from external frameworks (EF Core, APIs)
 - Autonomy is required: sealed Domain objects, strongly-typed IDs
-
-## DDD vs POCO — Quick Decision
-
-| Use | When |
-|-----|------|
-| `sealed class Foo : AggregateRoot` + factory method | The object has domain invariants, raises events, or owns child entities |
-| Plain `sealed record Foo(...)` (POCO) | Pure data carrier, no invariants, used only inside Application or API (DTOs, ViewModels) |
-| `sealed class Bar : ValueObject` | Immutable, identity-by-value, represents a domain concept (e.g., `PolicyNumber`, `Horsepower`) |
-
-**Rule of thumb:** if you're tempted to add an `if` or `throw` to protect the object's state — it's a Domain object (aggregate or value object), not a POCO.
 
 ## Implementation Flow
 
@@ -80,85 +67,10 @@ app.MapGet("/orders/{id}", async (Guid id, IQueryBus bus)
 
 | Layer | Purpose | Allowed Dependencies |
 |-------|---------|----------------------|
-| **SharedKernel** *(multi-context only)* | Generic interfaces + base classes only — zero domain logic | None |
-| **Domain** | Pure business logic, aggregates | SharedKernel *(optional)* |
-| **Application** | Use cases, Handler orchestration | Domain, SharedKernel *(optional)* |
+| **Domain** | Pure business logic, aggregates | None (ZERO transitive references) |
+| **Application** | Use cases, Handler orchestration | Domain |
 | **Infrastructure** | Database, DI registration, CQRS Bus | Application, Domain |
 | **API** | Endpoints, JSON mapping | **Infrastructure** (Transitive: Application, Domain) |
-
-## Shared Kernel (Multi-Context Solutions)
-
-Use a `SharedKernel` project when **two or more Bounded Contexts** need to share handler interfaces or base classes. It must contain **zero domain logic**.
-
-```
-SharedKernel/
-├── Abstractions/
-│   ├── ICommandHandler.cs   ← generic interface only
-│   ├── IQueryHandler.cs
-│   ├── ValueObject.cs       ← base class, no business logic
-│   └── AggregateRoot.cs     ← base class, exposes DomainEvents collection
-└── Events/
-    └── DomainEvent.cs       ← abstract base for all domain events
-```
-
-**Dependency rule for SharedKernel:** it depends on **nothing**. Domain and Application reference it, not the other way around.
-
-```csharp
-// SharedKernel/Abstractions/ICommandHandler.cs — pure interface, no NuGet beyond System
-public interface ICommandHandler<in TCommand, TResult>
-{
-    Task<TResult> HandleAsync(TCommand command, CancellationToken ct = default);
-}
-
-// Each context's Application layer implements it:
-// Orders.Application/Features/PlaceOrder/PlaceOrderCommandHandler.cs
-using SharedKernel.Abstractions;
-public sealed class PlaceOrderCommandHandler
-    : ICommandHandler<PlaceOrderCommand, OrderId> { }
-```
-
-**What NEVER goes in SharedKernel:** concrete value objects like `Money`, `Address` (each context defines its own); aggregate logic; context-specific event types.
-
-## Domain Events
-
-**Rule:** Domain events are **declared in the Domain layer** and **dispatched in the Application layer** (from the handler, after the aggregate operation succeeds).
-
-```csharp
-// Domain/Orders/Events/OrderPlacedEvent.cs — sealed, in Domain
-public sealed class OrderPlacedEvent : DomainEvent  // DomainEvent base from SharedKernel (or Domain if single-context)
-{
-    public OrderId OrderId { get; }
-    public OrderPlacedEvent(OrderId orderId) => OrderId = orderId;
-}
-
-// Domain/Orders/Order.cs — aggregate raises the event
-public sealed class Order : AggregateRoot
-{
-    public static Order Create(OrderId id, CustomerId customerId)
-    {
-        var order = new Order(id, customerId);
-        order.AddDomainEvent(new OrderPlacedEvent(id)); // ← raised in Domain
-        return order;
-    }
-}
-
-// Application/Features/PlaceOrder/PlaceOrderCommandHandler.cs — handler dispatches
-public sealed class PlaceOrderCommandHandler : ICommandHandler<PlaceOrderCommand, OrderId>
-{
-    private readonly IOrderRepository _repository;
-    private readonly IDomainEventDispatcher _dispatcher; // interface in Application/Domain
-
-    public async Task<OrderId> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
-    {
-        var order = Order.Create(cmd.OrderId, cmd.CustomerId);
-        await _repository.AddAsync(order, ct);
-        await _dispatcher.DispatchAsync(order.DomainEvents, ct); // ← dispatched in Application
-        return order.Id;
-    }
-}
-```
-
-**Anti-pattern:** Never dispatch events from inside a Domain aggregate method — Domain has no dependency on dispatch infrastructure.
 
 ## The Dependency Chain (Transitive Access)
 
@@ -201,22 +113,27 @@ The architecture follows a strict outward-in dependency flow:
 | Read result named `ProductDto` | Name it `ProductViewModel` to distinguish from transfer objects |
 | `typeof(Product).Assembly` in tests | Use `typeof(IApplicationMarker).Assembly` for reliable discovery |
 | Non-sealed Domain classes | All Domain classes must be `sealed` (enforced by NetArchTest) |
-| SharedKernel references Domain | SharedKernel must depend on **nothing** — if it references Domain, invert: Domain references SharedKernel |
 | Handler contains `if`/business logic | Delegate to Domain aggregate methods — handlers orchestrate only |
 
 ---
 
 ## References
 
-- [Architecture Layers](references/architecture-layers.md) — Dependency rules, marker interfaces, layer tests, and layer validation with NetArchTest
-- [CQRS Patterns](references/cqrs-patterns.md) — Handler interfaces, examples, DI discovery, and complete CQRS implementation patterns
+- [Architecture Layers](references/architecture-layers.md) — Dependency rules, marker interfaces, layer tests
+- [CQRS Patterns](references/cqrs-patterns.md) — Handler interfaces and examples
 - [Convention-Based DI](references/convention-based-di.md) — Auto-discovery, Bus interfaces, full DI setup
 - [Layer Responsibilities](references/layer-responsibilities.md) — Full rules for each layer with DDD context
-- [Project Structure](references/project-structure.md) — File/folder conventions and layer organization guidance
+- [Project Structure](references/project-structure.md) — File and folder conventions per layer
 - [NetArchTest Rules](references/netarchtest-rules.md) — Automated boundary enforcement
-- [DDD Patterns](references/ddd.md) — Aggregates, factory methods, value objects, and domain events (optional)
-- [Shared Kernel](references/shared-kernel.md) — Shared abstractions for multi-context solutions (optional)
-- [Init Script](scripts/init-project.sh) — Bootstrap script for new project setup (`./init-project.sh MyApp`)
-- [ArchitectureTests Template](templates/IntegrationTests/ArchitectureTests.cs) — Drop-in architecture test template
+- [DDD Patterns](references/ddd.md) — Aggregates, factory methods, domain events (optional)
+- [Shared Kernel](references/shared-kernel.md) — Multi-context shared abstractions (optional)
+- [Init Script](scripts/init-project.sh) — Bootstrap a new project (`./init-project.sh MyApp`)
+- [ArchitectureTests Template](templates/IntegrationTests/ArchitectureTests.cs) — Drop-in test class
+
+- [CQRS Patterns & Implementation](./references/cqrs-patterns.md) — Handler interfaces, DI discovery, complete implementation examples
+- [Architecture Layers & Validation](./references/architecture-layers.md) — Layer separation, NetArchTest tests, marker interfaces
+- [Project Structure Guide](./references/project-structure.md) — Folder organization, layer responsibilities
+- [SharedKernel Abstraction Platform](./references/shared-kernel.md) — *Optional: shared abstractions (CQRS interfaces, base classes)*
+- [DDD: Optional Patterns](./references/ddd.md) — *Optional: Domain-Driven Design patterns (aggregates, factories, value objects, domain events)*
 
 

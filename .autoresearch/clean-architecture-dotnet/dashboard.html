@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autoresearch — clean-architecture-dotnet</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      padding: 24px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 4px; color: #1a1a2e; }
+    .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .card .label { font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .card .value { font-size: 1.8rem; font-weight: 700; color: #1a1a2e; }
+    .card .value.green { color: #2ecc71; }
+    .card .value.blue { color: #3498db; }
+    .card .value.orange { color: #e67e22; }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .status-running { background: #dbeafe; color: #1d4ed8; }
+    .status-complete { background: #d1fae5; color: #065f46; }
+    .chart-section { background: white; border-radius: 10px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 24px; }
+    .chart-section h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 16px; color: #555; }
+    .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    thead { background: #f1f3f5; }
+    th { padding: 10px 14px; text-align: left; font-size: 0.78rem; color: #777; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    td { padding: 10px 14px; font-size: 0.85rem; border-top: 1px solid #f0f0f0; }
+    tr:hover td { background: #fafafa; }
+    .pill { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; }
+    .pill-baseline { background: #dbeafe; color: #1d4ed8; }
+    .pill-keep { background: #d1fae5; color: #065f46; }
+    .pill-discard { background: #fee2e2; color: #991b1b; }
+    .eval-bar { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 0.82rem; }
+    .eval-bar .bar-wrap { flex: 1; background: #f0f0f0; border-radius: 8px; height: 10px; }
+    .eval-bar .bar-fill { height: 10px; border-radius: 8px; background: linear-gradient(90deg, #a8d8ea, #7ac2e0); }
+    .eval-bar .pct { width: 38px; text-align: right; color: #888; font-size: 0.75rem; }
+    .section-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: #555; }
+    .refresh-note { font-size: 0.72rem; color: #bbb; margin-top: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Autoresearch — <code>clean-architecture-dotnet</code></h1>
+  <p class="subtitle">Autonomous skill optimization loop &bull; Auto-refreshes every 10s</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">Status</div>
+      <div id="status-badge"><span class="status-badge status-running">Running</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Current Experiment</div>
+      <div class="value blue" id="current-exp">—</div>
+    </div>
+    <div class="card">
+      <div class="label">Best Pass Rate</div>
+      <div class="value green" id="best-rate">—</div>
+    </div>
+    <div class="card">
+      <div class="label">Baseline</div>
+      <div class="value orange" id="baseline-rate">—</div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-section">
+      <h2>Score progression</h2>
+      <canvas id="progressChart" height="120"></canvas>
+    </div>
+    <div class="chart-section">
+      <h2>Eval breakdown</h2>
+      <div id="eval-breakdown"></div>
+    </div>
+  </div>
+
+  <p class="section-title">Experiment log</p>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Score</th>
+        <th>Pass rate</th>
+        <th>Status</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody id="exp-table-body"></tbody>
+  </table>
+
+  <p class="refresh-note">Auto-refreshing every 10 seconds from results.json</p>
+
+  <script>
+    let chart = null;
+
+    async function loadData() {
+      try {
+        const r = await fetch('results.json?t=' + Date.now());
+        const data = await r.json();
+
+        // Status badge
+        const badge = document.getElementById('status-badge');
+        badge.innerHTML = data.status === 'complete'
+          ? '<span class="status-badge status-complete">Complete ✓</span>'
+          : '<span class="status-badge status-running">Running…</span>';
+
+        document.getElementById('current-exp').textContent = data.current_experiment ?? '—';
+        document.getElementById('best-rate').textContent   = data.best_score   ? data.best_score.toFixed(1) + '%' : '—';
+        document.getElementById('baseline-rate').textContent = data.baseline_score ? data.baseline_score.toFixed(1) + '%' : '—';
+
+        // Chart
+        const labels = data.experiments.map(e => '#' + e.id);
+        const rates  = data.experiments.map(e => e.pass_rate);
+        const colors = data.experiments.map(e =>
+          e.status === 'baseline' ? '#93c5fd' :
+          e.status === 'keep'     ? '#6ee7b7' : '#fca5a5'
+        );
+
+        if (!chart) {
+          const ctx = document.getElementById('progressChart').getContext('2d');
+          chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [{
+                label: 'Pass rate %',
+                data: rates,
+                backgroundColor: colors,
+                borderRadius: 5,
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+              },
+              plugins: { legend: { display: false } }
+            }
+          });
+        } else {
+          chart.data.labels = labels;
+          chart.data.datasets[0].data = rates;
+          chart.data.datasets[0].backgroundColor = colors;
+          chart.update();
+        }
+
+        // Eval breakdown
+        const breakdown = document.getElementById('eval-breakdown');
+        breakdown.innerHTML = '';
+        for (const ev of data.eval_breakdown) {
+          const pct = ev.total > 0 ? Math.round(ev.pass_count / ev.total * 100) : 0;
+          breakdown.innerHTML += `
+            <div class="eval-bar">
+              <span style="width:200px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${ev.name}</span>
+              <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
+              <span class="pct">${pct}%</span>
+            </div>`;
+        }
+
+        // Table
+        const tbody = document.getElementById('exp-table-body');
+        tbody.innerHTML = '';
+        for (const e of [...data.experiments].reverse()) {
+          const pillClass = e.status === 'baseline' ? 'pill-baseline' : e.status === 'keep' ? 'pill-keep' : 'pill-discard';
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${e.id}</strong></td>
+              <td>${e.score}/${e.max_score}</td>
+              <td>${e.pass_rate.toFixed(1)}%</td>
+              <td><span class="pill ${pillClass}">${e.status}</span></td>
+              <td>${e.description}</td>
+            </tr>`;
+        }
+      } catch (err) {
+        console.error('Load error:', err);
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 10000);
+  </script>
+</body>
+</html>
