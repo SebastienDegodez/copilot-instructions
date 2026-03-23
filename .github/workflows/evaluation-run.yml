@@ -21,7 +21,7 @@ on:
         default: ''
     secrets:
       LLM_API_KEY:
-        required: true
+        required: false
 
 permissions:
   contents: read
@@ -60,6 +60,11 @@ jobs:
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
+          if [ -z "$LLM_API_KEY" ]; then
+            echo "::warning::LLM_API_KEY is not configured — skipping evaluation for ${{ matrix.kind }}:${{ matrix.name }}"
+            mkdir -p /tmp/results
+            exit 0
+          fi
           mkdir -p /tmp/results
           npx tsx src/index.ts evaluate \
             --entries /tmp/entries.json \
@@ -75,6 +80,7 @@ jobs:
           name: evaluation-results-${{ matrix.kind }}-${{ matrix.name }}
           path: /tmp/results/
           retention-days: 30
+          if-no-files-found: ignore
 
   # ── Comment on PR with aggregated results ────────────────────────────────
   comment-on-pr:
