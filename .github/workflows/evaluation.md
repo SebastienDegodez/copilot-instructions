@@ -3,6 +3,7 @@ name: "Evaluation Pipeline"
 description: >
   Weekly skill and instruction evaluation with smart caching.
   Evaluates only changed items, updates benchmark data, and auto-commits.
+  Runs on schedule (Mondays), manual dispatch, and on pull requests.
 
 on:
   schedule:
@@ -21,6 +22,13 @@ on:
         description: "Number of evaluation runs per scenario"
         type: string
         default: "3"
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'plugins/**'
+      - 'instructions/**'
+      - 'tests/**'
+      - 'tools/evaluator/**'
 
 permissions:
   contents: write
