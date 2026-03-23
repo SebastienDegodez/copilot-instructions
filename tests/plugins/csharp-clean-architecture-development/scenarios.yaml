@@ -1,0 +1,32 @@
+kind: plugin
+ref: plugins/csharp-clean-architecture-development
+scenarios:
+  - name: scaffold-clean-architecture-solution
+    description: Scaffold a complete Clean Architecture .NET solution
+    prompt: |
+      Create a .NET 9 Clean Architecture solution for a "ProductCatalog" domain.
+      The solution should include:
+      - Domain layer with entities (Product, Category)
+      - Application layer with CQRS commands/queries using MediatR
+      - Infrastructure layer with EF Core repository implementations
+      - API layer with minimal API endpoints
+      Follow clean architecture dependency rules strictly.
+    expectations:
+      keywords:
+        - "Domain"
+        - "Application"
+        - "Infrastructure"
+        - "IRepository"
+        - "MediatR"
+      patterns:
+        - '/class \w+Command/'
+        - '/class \w+Query/'
+    judge:
+      criteria: |
+        Score on:
+        - Architecture compliance: Correct layer separation and dependency direction?
+        - CQRS implementation: Proper command/query separation with MediatR?
+        - Code quality: Clean, idiomatic C# following the plugin's conventions?
+      passing_score: 7.5
+    timeout: 120
+    runs: 2

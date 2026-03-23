@@ -1,0 +1,25 @@
+kind: skill
+ref: skills/skill-creator
+scenarios:
+  - name: create-new-skill
+    description: Create a new skill from a description
+    prompt: |
+      Create a new Copilot skill for "implementing the Repository pattern in C#".
+      Generate the full SKILL.md content with:
+      - Clear description of the skill
+      - Step-by-step usage instructions
+      - Code examples
+      - References to best practices
+    expectations:
+      keywords:
+        - "Repository"
+        - "IRepository"
+    judge:
+      criteria: |
+        Score on:
+        - SKILL.md format compliance
+        - Quality of examples and instructions
+        - Practical usefulness for a .NET developer
+      passing_score: 7.0
+    timeout: 60
+    runs: 2

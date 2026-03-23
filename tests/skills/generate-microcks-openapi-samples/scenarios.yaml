@@ -1,0 +1,27 @@
+kind: skill
+ref: skills/generate-microcks-openapi-samples
+scenarios:
+  - name: basic-openapi-sample
+    description: Generate a Microcks-compatible OpenAPI sample for a simple REST API
+    prompt: |
+      Generate a Microcks OpenAPI sample for a simple Books REST API.
+      The API should have:
+      - GET /books — returns a list of books
+      - GET /books/{id} — returns a single book
+      Include x-microcks-operation extensions with examples.
+    expectations:
+      keywords:
+        - "x-microcks-operation"
+        - "openapi"
+        - "paths"
+      patterns:
+        - '/\d{3}:/'
+    judge:
+      criteria: |
+        Score on:
+        - OpenAPI compliance: Valid OpenAPI 3.x structure?
+        - Microcks compatibility: Correct x-microcks-operation usage?
+        - Completeness: All required fields present?
+      passing_score: 7.0
+    timeout: 60
+    runs: 2

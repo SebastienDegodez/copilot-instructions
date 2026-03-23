@@ -1,0 +1,17 @@
+kind: skill
+ref: skills/sample-skill
+scenarios:
+  - name: basic-hello-world
+    description: Test basic hello world generation
+    prompt: |
+      Create a TypeScript function that logs "hello world" to the console.
+    expectations:
+      keywords:
+        - "function"
+        - "console.log"
+    judge:
+      criteria: |
+        Score on: Correctness (does the function work?), Code quality (clean TS?)
+      passing_score: 7.0
+    timeout: 30
+    runs: 1

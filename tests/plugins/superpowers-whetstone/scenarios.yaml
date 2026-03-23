@@ -1,0 +1,29 @@
+kind: plugin
+ref: plugins/superpowers-whetstone
+scenarios:
+  - name: outside-in-tdd-workflow
+    description: Apply the outside-in TDD workflow to a new feature
+    prompt: |
+      Using the superpowers-whetstone outside-in-tdd skill, implement a new feature
+      for a "ShoppingCart" domain using outside-in TDD:
+      1. Start with an acceptance test (Gherkin scenario)
+      2. Write a failing integration test
+      3. Implement with unit tests driving the design
+      Show the complete TDD workflow for adding an item to the cart.
+    expectations:
+      keywords:
+        - "Given"
+        - "When"
+        - "Then"
+        - "Arrange"
+        - "Act"
+        - "Assert"
+    judge:
+      criteria: |
+        Score on:
+        - TDD workflow adherence: Is the outside-in approach properly followed?
+        - Gherkin quality: Are BDD scenarios well-formed and meaningful?
+        - Test quality: Are the tests clear and testing the right behaviors?
+      passing_score: 7.0
+    timeout: 90
+    runs: 2

@@ -5,3 +5,8 @@ website/node_modules/
 website/dist/
 website/.env
 website/.env.local
+
+# Evaluator tool
+tools/evaluator/node_modules/
+tools/evaluator/dist/
+tools/evaluator/coverage/

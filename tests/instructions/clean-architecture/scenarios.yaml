@@ -1,0 +1,29 @@
+kind: instruction
+ref: instructions/clean-architecture
+scenarios:
+  - name: apply-clean-architecture-principles
+    description: Apply clean architecture principles to a new .NET feature
+    prompt: |
+      I need to add a "UserRegistration" feature to my .NET 9 application.
+      Following the clean-architecture instructions, show me:
+      1. Where to place each class (which layer)
+      2. The domain entity and value objects
+      3. The application service/use case
+      4. How dependencies flow between layers
+      Ensure strict adherence to clean architecture dependency rules.
+    expectations:
+      keywords:
+        - "Domain"
+        - "Application"
+        - "Infrastructure"
+      patterns:
+        - '/interface I\w+/'
+    judge:
+      criteria: |
+        Score on:
+        - Architectural compliance: Does the code follow clean architecture rules?
+        - Layer separation: Are dependencies pointing inward only?
+        - Domain model quality: Are domain entities and value objects well-designed?
+      passing_score: 7.5
+    timeout: 90
+    runs: 3
