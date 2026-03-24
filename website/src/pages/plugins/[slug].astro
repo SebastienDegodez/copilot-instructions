@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { marked } from 'marked';
+import { loadPluginLspServers } from '../../utils/pluginLsp';
 
 export async function getStaticPaths() {
   const plugins = await getCollection('plugins');
@@ -23,6 +24,7 @@ interface Props {
 }
 
 const { plugin, slug } = Astro.props;
+const lspServers = await loadPluginLspServers(slug, plugin.data.lspServers);
 
 // Read the README.md file for this plugin
 let readmeContent = '';
@@ -49,7 +51,7 @@ try {
       <p class="text-slate-200 text-lg leading-relaxed">{plugin.data.description}</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-slate-800 border border-slate-700 p-4 rounded-lg">
         <div class="text-slate-400 text-sm mb-1">Version</div>
         <div class="text-slate-100 font-semibold">{plugin.data.version}</div>
@@ -64,6 +66,12 @@ try {
         <div class="text-slate-400 text-sm mb-1">Skills Included</div>
         <div class="text-slate-100 font-semibold">{plugin.data.skills.length}</div>
       </div>
+      {lspServers.length > 0 && (
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-lg">
+          <div class="text-slate-400 text-sm mb-1">LSP Servers</div>
+          <div class="text-slate-100 font-semibold">{lspServers.length}</div>
+        </div>
+      )}
     </div>
 
     {plugin.data.tags && plugin.data.tags.length > 0 && (
@@ -120,16 +128,51 @@ try {
       </div>
     </div>
 
-    {/* README */}
     <div class="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-      <div class="px-6 py-3 border-b border-slate-700">
-        <span class="font-semibold text-slate-300">📖 README</span>
+      <div class="flex border-b border-slate-700">
+        <button id="dtab-readme" class="dtab px-4 py-2 text-sm font-semibold text-blue-400 border-b-2 border-blue-500 bg-slate-900/50 whitespace-nowrap" onclick="switchDtab('readme')">
+          📖 README
+        </button>
+        {lspServers.length > 0 && (
+          <button id="dtab-lsp" class="dtab px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 transition whitespace-nowrap" onclick="switchDtab('lsp')">
+            🔧 LSP Servers
+          </button>
+        )}
       </div>
-      <div class="p-8">
+      <div id="dcontent-readme" class="dcontent p-8">
         <article class="prose prose-invert prose-lg max-w-none prose-headings:text-slate-100 prose-h1:text-3xl prose-h2:text-2xl prose-h2:border-b prose-h2:border-slate-700 prose-h2:pb-2 prose-h3:text-xl prose-p:text-slate-300 prose-a:text-blue-400 prose-a:no-underline hover:prose-a:text-blue-300 hover:prose-a:underline prose-strong:text-slate-200 prose-code:text-blue-300 prose-code:bg-slate-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-ul:text-slate-300 prose-ol:text-slate-300 prose-li:text-slate-300 prose-blockquote:border-blue-500 prose-blockquote:text-slate-400">
           <Fragment set:html={readmeContent} />
         </article>
       </div>
+      {lspServers.length > 0 && (
+        <div id="dcontent-lsp" class="dcontent p-6 hidden">
+          <div class="grid grid-cols-1 gap-4">
+            {lspServers.map((server) => (
+              <div class="bg-slate-900 border border-slate-700 p-4 rounded-lg space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                  <h3 class="text-base font-bold text-blue-400">{server.name}</h3>
+                  {Object.keys(server.fileExtensions).length > 0 && (
+                    <div class="flex flex-wrap justify-end gap-2">
+                      {Object.entries(server.fileExtensions).map(([extension, language]) => (
+                        <span class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
+                          <span class="font-mono text-blue-300">{extension}</span>
+                          <span class="text-slate-500">→</span>
+                          <span>{language}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div class="text-slate-400 text-xs uppercase tracking-wide mb-2">Launch Command</div>
+                  <code class="text-xs font-mono text-green-400 block bg-slate-950 border border-slate-700 rounded px-3 py-2 overflow-x-auto whitespace-nowrap">{[server.command, ...server.args].join(' ')}</code>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   </div>
 </BaseLayout>
@@ -148,6 +191,20 @@ try {
       tab.classList.add('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-slate-900/50');
     }
   }
+  function switchDtab(name: string) {
+    document.querySelectorAll('.dcontent').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.dtab').forEach(el => {
+      el.classList.remove('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-slate-900/50');
+      el.classList.add('text-slate-400');
+    });
+    document.getElementById(`dcontent-${name}`)?.classList.remove('hidden');
+    const tab = document.getElementById(`dtab-${name}`);
+    if (tab) {
+      tab.classList.remove('text-slate-400');
+      tab.classList.add('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-slate-900/50');
+    }
+  }
   (window as any).switchItab = switchItab;
+  (window as any).switchDtab = switchDtab;
   // No other client-side JS needed
 </script>

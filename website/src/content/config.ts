@@ -40,6 +40,7 @@ const pluginsCollection = defineCollection({
     author: z.string().optional(),
     tags: z.array(z.string()).optional(),
     skills: z.array(z.string()),
+    lspServers: z.array(z.string()).optional(),
   }),
 });
 

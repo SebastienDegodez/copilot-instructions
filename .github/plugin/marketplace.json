@@ -13,6 +13,11 @@
       "name": "minimal-context-tools",
       "source": "./plugins/minimal-context-tools",
       "description": "Collection of efficient CLI tools and workflows optimized for minimal context usage and one-shot patterns with LLMs"
+    },
+    {
+      "name": "superpowers-whetstone",
+      "source": "./plugins/superpowers-whetstone",
+      "description": "Superpowers Whetstone is a plugin that provides a collection of tools and utilities to enhance the capabilities of language models. It includes features such as context management, prompt engineering, and efficient data handling to optimize the performance of language models in various applications."
     }
   ]
 }

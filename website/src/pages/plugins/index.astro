@@ -1,11 +1,24 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { loadPluginLspServers } from '../../utils/pluginLsp';
 
 const plugins = await getCollection('plugins');
 
 // Sort plugins alphabetically by name
 const sortedPlugins = plugins.sort((a, b) => a.data.name.localeCompare(b.data.name));
+const pluginCards = await Promise.all(
+  sortedPlugins.map(async (plugin) => {
+    const slug = plugin.id.split('/')[0];
+    const lspServers = await loadPluginLspServers(slug, plugin.data.lspServers);
+
+    return {
+      plugin,
+      slug,
+      lspServerCount: lspServers.length,
+    };
+  }),
+);
 ---
 
 <BaseLayout title="Plugins">
@@ -18,9 +31,7 @@ const sortedPlugins = plugins.sort((a, b) => a.data.name.localeCompare(b.data.na
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {
-        sortedPlugins.map((plugin) => {
-          // Extract directory name from id (e.g., "csharp-clean-architecture-development/plugin" -> "csharp-clean-architecture-development")
-          const slug = plugin.id.split('/')[0];
+        pluginCards.map(({ plugin, slug, lspServerCount }) => {
           return (
             <a
               href={`${import.meta.env.BASE_URL}plugins/${slug}/`}
@@ -35,6 +46,11 @@ const sortedPlugins = plugins.sort((a, b) => a.data.name.localeCompare(b.data.na
               <div class="text-sm text-slate-400 mb-4">
                 <span class="font-semibold">{plugin.data.skills.length}</span> skill{plugin.data.skills.length !== 1 ? 's' : ''} included
               </div>
+              {lspServerCount > 0 && (
+                <div class="text-sm text-slate-400 mb-4">
+                  <span class="font-semibold">{lspServerCount}</span> LSP server{lspServerCount !== 1 ? 's' : ''}
+                </div>
+              )}
               {plugin.data.tags && plugin.data.tags.length > 0 && (
                 <div class="flex flex-wrap gap-2">
                   {plugin.data.tags.map((tag) => (
