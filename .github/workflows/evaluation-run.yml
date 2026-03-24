@@ -81,7 +81,8 @@ jobs:
           ENTRIES_FILE="/tmp/entries-job-${{ inputs.job-index }}.json"
 
           node -e "
-            const ids = JSON.parse(process.argv[1]);
+            const raw = process.argv[1];
+            const ids = raw.split(',').map(s => s.trim()).filter(Boolean);
             const entries = ids.map(id => {
               const [kind, ...nameParts] = id.split(':');
               const name = nameParts.join(':');

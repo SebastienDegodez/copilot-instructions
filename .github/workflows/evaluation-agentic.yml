@@ -194,7 +194,11 @@ jobs:
 
           if [ "$TOTAL" = "0" ]; then
             echo "has-assets=false" >> "$GITHUB_OUTPUT"
-            echo "matrix={\"include\":[]}" >> "$GITHUB_OUTPUT"
+            {
+              echo "matrix<<EOF"
+              echo '{"include":[]}'
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
             echo "No assets to evaluate"
             exit 0
           fi
@@ -202,6 +206,7 @@ jobs:
           echo "has-assets=true" >> "$GITHUB_OUTPUT"
 
           # Build parallel batches (max 6 jobs, assets distributed evenly)
+          # asset-ids is comma-separated to avoid nested JSON escaping issues
           MATRIX=$(echo "$ENTRIES" | node -e "
             const entries = JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));
             const MAX_JOBS = 6;
@@ -214,14 +219,18 @@ jobs:
               if (batch.length > 0) {
                 include.push({
                   'job-index': String(i),
-                  'asset-ids': JSON.stringify(batch.map(e => e.id))
+                  'asset-ids': batch.map(e => e.id).join(',')
                 });
               }
             }
             process.stdout.write(JSON.stringify({ include }));
           ")
 
-          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          {
+            echo "matrix<<EOF"
+            echo "$MATRIX"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
           echo "Matrix: $MATRIX"
 
   # ── Parallel evaluation workers ───────────────────────────────────────────
@@ -358,7 +367,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet website/src/data/benchmarks/summary.json; then
             git add website/src/data/benchmarks/summary.json
-            git commit -m "chore: update benchmark data [skip ci]"
+            git commit -m "chore: update benchmark data"
             git push
             echo "Benchmark data committed and pushed"
           else
