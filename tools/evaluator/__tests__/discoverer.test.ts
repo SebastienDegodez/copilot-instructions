@@ -5,11 +5,39 @@ import type { BenchmarkSummary } from '../src/core/types.js';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
-import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { readdirSync, writeFileSync, mkdirSync, rmSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = join(__dirname, 'fixtures');
+
+function createFixtureRepoWithEvaluationWorkflow(workflowFile = 'evaluation-run.yml'): string {
+  const repoRoot = mkdtempSync(join(tmpdir(), 'evaluator-discoverer-'));
+
+  mkdirSync(join(repoRoot, '.github', 'workflows'), { recursive: true });
+  writeFileSync(
+    join(repoRoot, '.github', 'workflows', workflowFile),
+    'name: Evaluation\non:\n  workflow_dispatch:\njobs: {}\n',
+    'utf-8',
+  );
+
+  mkdirSync(join(repoRoot, 'skills', 'my-skill'), { recursive: true });
+  writeFileSync(join(repoRoot, 'skills', 'my-skill', 'SKILL.md'), '# My skill\n', 'utf-8');
+
+  return repoRoot;
+}
+
+function getCurrentEvaluationWorkflowChange(repoRoot: string): string {
+  const workflowFile = readdirSync(join(repoRoot, '.github', 'workflows')).find((file) =>
+    /^evaluation(?:-run)?\.ya?ml$/.test(file),
+  );
+
+  if (!workflowFile) {
+    throw new Error('Fixture repo is missing the current evaluation workflow YAML');
+  }
+
+  return `.github/workflows/${workflowFile}`;
+}
 
 function makeMockGitClient(files: string[], changedSince: string[] = []): GitClient {
   return {
@@ -72,6 +100,23 @@ describe('discoverChangedEntries', () => {
     const gitClient = makeMockGitClient(['.github/workflows/evaluation.yml']);
     const result = await discoverChangedEntries(gitClient, FIXTURES_DIR, 'origin/main', 'HEAD');
     expect(result.isInfraChange).toBe(true);
+  });
+
+  it('treats the current evaluation workflow yaml seam as an infra change', async () => {
+    const repoRoot = createFixtureRepoWithEvaluationWorkflow();
+
+    try {
+      const gitClient = makeMockGitClient([getCurrentEvaluationWorkflowChange(repoRoot)]);
+      const result = await discoverChangedEntries(gitClient, repoRoot, 'origin/main', 'HEAD');
+
+      expect(result).toMatchObject({
+        isInfraChange: true,
+        skipped: false,
+      });
+      expect(result.entries.map((entry) => entry.id)).toEqual(['skill:my-skill']);
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+    }
   });
 
   it('detects tests/ path as triggering skill evaluation', async () => {
@@ -185,5 +230,32 @@ describe('filterByPreviousResults', () => {
     const gitClient = makeMockGitClient([], []);
     const result = await filterByPreviousResults(baseEntries, corruptPath, gitClient);
     expect(result).toHaveLength(2);
+  });
+
+  it('includes an entry when the previously recorded commit cannot be resolved safely', async () => {
+    const summaryPath = writeSummary({
+      lastUpdated: '2026-01-01T00:00:00Z',
+      entries: [
+        {
+          id: 'skill:my-skill',
+          kind: 'skill',
+          name: 'my-skill',
+          history: [{ date: '2026-01-01T00:00:00Z', commit: { sha: 'not-a-real-sha', url: '' }, model: 'gpt-4o', overallScore: 1, passRate: 1, scenarios: [], tokens: { input: 0, output: 0 }, source: 'scheduled' }],
+        },
+      ],
+    });
+    // Simulate the real git behavior: getChangedFilesSince throws when the SHA cannot be resolved
+    const gitClient: GitClient = {
+      getChangedFiles: vi.fn().mockResolvedValue([]),
+      getChangedFilesSince: vi.fn().mockImplementation((sha: string) => {
+        if (sha === 'not-a-real-sha') {
+          return Promise.reject(new Error(`fatal: ambiguous argument '${sha}': unknown revision`));
+        }
+        return Promise.resolve([]);
+      }),
+      getCurrentSha: vi.fn().mockResolvedValue('abc123'),
+    };
+    const result = await filterByPreviousResults(baseEntries, summaryPath, gitClient);
+    expect(result.find((entry) => entry.id === 'skill:my-skill')).toBeDefined();
   });
 });

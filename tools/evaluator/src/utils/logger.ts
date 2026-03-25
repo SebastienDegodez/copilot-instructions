@@ -1,17 +1,21 @@
-import pino from 'pino';
+import pino, { type LoggerOptions } from 'pino';
 
 const isCI = process.env['CI'] === 'true';
 
-export const logger = pino({
+const loggerOptions: LoggerOptions = {
   level: process.env['LOG_LEVEL'] ?? 'info',
-  transport: isCI
-    ? undefined
+  ...(isCI
+    ? {}
     : {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:HH:MM:ss',
-          ignore: 'pid,hostname',
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:HH:MM:ss',
+            ignore: 'pid,hostname',
+          },
         },
-      },
-});
+      }),
+};
+
+export const logger = pino(loggerOptions);
