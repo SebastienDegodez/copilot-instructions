@@ -455,10 +455,17 @@ jobs:
             --source "${SOURCE}" \
             --commit-sha "${COMMIT_SHA}"
 
+      - name: Sanitize artifact name
+        id: sanitize-name
+        run: |
+          RAW_NAME="result-${{ matrix.entry.id }}"
+          SAFE_NAME="${RAW_NAME//:/-}"
+          echo "artifact_name=$SAFE_NAME" >> $GITHUB_OUTPUT
+
       - name: Upload result artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: result-${{ matrix.entry.id }}
+          name: ${{ steps.sanitize-name.outputs.artifact_name }}
           path: ${{ runner.temp }}/results/
           retention-days: 1
 
@@ -675,7 +682,7 @@ jobs:
                 body,
               });
             }
-
+      
       - name: Write Actions summary
         run: |
           REPORT_PATH="${{ steps.report.outputs.report-path }}"
