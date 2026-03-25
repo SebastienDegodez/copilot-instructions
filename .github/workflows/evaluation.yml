@@ -400,6 +400,7 @@ jobs:
       - name: Run evaluation
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
           ASSET_ID: ${{ matrix.entry.id }}
           ASSET_KIND: ${{ matrix.entry.kind }}
           ASSET_PATH: ${{ matrix.entry.assetPath }}
@@ -419,7 +420,7 @@ jobs:
 
           # Resolve evaluation source
           case "${EVENT_NAME}" in
-            schedule) SOURCE="scheduled" ;;
+            schedule) SOURCE="scheduled" ;; 
             issue_comment|pull_request|pull_request_target) SOURCE="pr" ;;
             *) SOURCE="manual" ;;
           esac
