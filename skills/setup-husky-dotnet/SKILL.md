@@ -19,7 +19,7 @@ Install and configure Husky Git hooks for .NET projects using **dotnet tool** (n
 ## Critical: .NET Tool Only
 
 **Husky (dotnet tool)** is pure .NET. Your environment needs:
-- `.NET SDK 6.0+`
+- `.NET SDK 10.0+`
 - `dotnet` CLI available in PATH
 - `git` initialized
 
