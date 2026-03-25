@@ -49,7 +49,7 @@ export interface EvaluationResult {
   passed: boolean;
   totalTokensInput: number;
   totalTokensOutput: number;
-  source: 'pr' | 'scheduled' | 'manual' | 'slash-command';
+  source: 'pr' | 'scheduled' | 'manual';
   commitSha: string;
 }
 

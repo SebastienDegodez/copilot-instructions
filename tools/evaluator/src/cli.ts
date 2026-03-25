@@ -65,10 +65,6 @@ export function buildCLI(): Command {
         logger.info(result, 'Discovery complete');
         writeFileSync(opts.output, JSON.stringify(result, null, 2), 'utf-8');
         logger.info({ output: opts.output }, 'Discovery result written');
-
-        if (result.skipped) {
-          process.exit(0);
-        }
       } catch (err) {
         logger.error({ err }, 'Discovery failed');
         process.exit(1);

@@ -28,6 +28,7 @@ function makeMockGitClient(files: string[], changedSince: string[] = []): GitCli
     getChangedFiles: vi.fn().mockResolvedValue(files),
     getChangedFilesSince: vi.fn().mockResolvedValue(changedSince),
     getCurrentSha: vi.fn().mockResolvedValue('abc1234'),
+    getPathDigestAtRef: vi.fn().mockResolvedValue(null),
   };
 }
 

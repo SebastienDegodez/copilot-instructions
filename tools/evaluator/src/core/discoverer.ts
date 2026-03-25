@@ -20,8 +20,8 @@ const ASSET_PATTERNS: AssetPattern[] = [
 ];
 
 const INFRA_PATTERNS: RegExp[] = [
+  /^\.github\/workflows\/.+\.ya?ml$/,
   /^tools\/evaluator\//,
-  /^\.github\/workflows\/evaluation(-run)?\.yml$/,
 ];
 
 function buildAssetPath(kind: AssetKind, name: string): string {
@@ -136,22 +136,24 @@ export async function discoverChangedEntries(
 }
 
 export async function discoverAllEntries(repoRoot: string): Promise<DiscoveredEntry[]> {
-  const { readdirSync, statSync } = await import('node:fs');
+  const { readdirSync, statSync, existsSync: fsExistsSync } = await import('node:fs');
 
   const entries: DiscoveredEntry[] = [];
 
   const collectDir = (dir: string, kind: AssetKind, buildPath: (name: string) => string) => {
     const fullDir = join(repoRoot, dir);
-    if (!existsSync(fullDir)) return;
+    if (!fsExistsSync(fullDir)) return;
     for (const entry of readdirSync(fullDir)) {
       const fullPath = join(fullDir, entry);
       if (statSync(fullPath).isDirectory()) {
+        const testPath = buildTestPath(kind, entry, repoRoot);
+        if (!testPath) continue; // skip assets without scenarios
         const id = `${kind}:${entry}`;
         entries.push({
           id,
           kind,
           assetPath: buildPath(entry),
-          testPath: buildTestPath(kind, entry, repoRoot),
+          testPath,
           changedFiles: [],
         });
       }
@@ -163,18 +165,20 @@ export async function discoverAllEntries(repoRoot: string): Promise<DiscoveredEn
 
   const instructionsDir = join(repoRoot, 'instructions');
   if (existsSync(instructionsDir)) {
-    const { readdirSync } = await import('node:fs');
-    for (const file of readdirSync(instructionsDir)) {
+    const { readdirSync: fsReaddir } = await import('node:fs');
+    for (const file of fsReaddir(instructionsDir)) {
       const match = /^(.+)\.instructions\.md$/.exec(file);
       if (match) {
         const name = match[1];
         if (!name) continue;
+        const testPath = buildTestPath('instruction', name, repoRoot);
+        if (!testPath) continue; // skip instructions without scenarios
         const id = `instruction:${name}`;
         entries.push({
           id,
           kind: 'instruction',
           assetPath: `instructions/${file}`,
-          testPath: buildTestPath('instruction', name, repoRoot),
+          testPath,
           changedFiles: [],
         });
       }
@@ -221,7 +225,20 @@ export async function filterByPreviousResults(
       continue;
     }
 
-    const changedFiles = await gitClient.getChangedFilesSince(lastCommitSha);
+    const changedFiles = await (async () => {
+      try {
+        return await gitClient.getChangedFilesSince(lastCommitSha);
+      } catch (err) {
+        logger.warn({ id: entry.id, lastCommitSha, err }, 'Cannot resolve previous commit SHA — including as fallback');
+        return null;
+      }
+    })();
+
+    if (changedFiles === null) {
+      filtered.push(entry);
+      continue;
+    }
+
     const relevantPaths = [entry.assetPath, entry.testPath].filter(Boolean) as string[];
 
     const relevantChangedFiles = changedFiles.filter((f) =>

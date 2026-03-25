@@ -24,6 +24,10 @@ function createFixtureRepoWithEvaluationWorkflow(workflowFile = 'evaluation-run.
   mkdirSync(join(repoRoot, 'skills', 'my-skill'), { recursive: true });
   writeFileSync(join(repoRoot, 'skills', 'my-skill', 'SKILL.md'), '# My skill\n', 'utf-8');
 
+  // Add test dir so my-skill is eligible for evaluation
+  mkdirSync(join(repoRoot, 'tests', 'skills', 'my-skill'), { recursive: true });
+  writeFileSync(join(repoRoot, 'tests', 'skills', 'my-skill', 'scenarios.yaml'), 'scenarios:\n  - name: test\n', 'utf-8');
+
   return repoRoot;
 }
 
@@ -44,6 +48,7 @@ function makeMockGitClient(files: string[], changedSince: string[] = []): GitCli
     getChangedFiles: vi.fn().mockResolvedValue(files),
     getChangedFilesSince: vi.fn().mockResolvedValue(changedSince),
     getCurrentSha: vi.fn().mockResolvedValue('abc123'),
+    getPathDigestAtRef: vi.fn().mockResolvedValue(null),
   };
 }
 
@@ -254,6 +259,7 @@ describe('filterByPreviousResults', () => {
         return Promise.resolve([]);
       }),
       getCurrentSha: vi.fn().mockResolvedValue('abc123'),
+      getPathDigestAtRef: vi.fn().mockResolvedValue(null),
     };
     const result = await filterByPreviousResults(baseEntries, summaryPath, gitClient);
     expect(result.find((entry) => entry.id === 'skill:my-skill')).toBeDefined();
