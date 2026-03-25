@@ -149,8 +149,8 @@ export function buildCLI(): Command {
         } else if (opts.format === 'benchmark') {
           const outputDir = opts.output ?? 'website/src/data/benchmarks';
           mkdirSync(outputDir, { recursive: true });
-          updateBenchmarkSummary(results, outputDir);
-          logger.info({ outputDir }, 'Benchmark data updated');
+          const { changed, summaryPath } = updateBenchmarkSummary(results, outputDir);
+          logger.info({ changed, summaryPath }, 'Benchmark report complete');
         } else if (opts.format === 'json') {
           const outputPath = opts.output ?? 'report.json';
           writeFileSync(outputPath, formatMultipleAsJSON(results), 'utf-8');
