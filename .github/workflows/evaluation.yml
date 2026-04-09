@@ -328,30 +328,35 @@ jobs:
       - name: Parse discovery result
         id: parse
         run: |
-          OUTPUT="${{ steps.discover.outputs.output }}"
           node - <<'SCRIPT'
           const fs = require('node:fs');
-          const path = process.env.GITHUB_OUTPUT;
+          const githubOutput = process.env.GITHUB_OUTPUT;
           const output = process.env.OUTPUT || '';
           let result;
           try {
-            result = JSON.parse(fs.readFileSync(output, 'utf8'));
-          } catch {
+            const raw = fs.readFileSync(output, 'utf8');
+            result = JSON.parse(raw);
+          } catch (err) {
+            console.error(`Failed to read/parse discovery file: ${err.message}`);
             result = { skipped: true, isInfraChange: false, entries: [] };
           }
           const skipped = result.skipped ? 'true' : 'false';
           const isInfra = result.isInfraChange ? 'true' : 'false';
-          const matrix = result.skipped ? '[]' : JSON.stringify(
-            result.entries.map(e => ({
+          const entries = Array.isArray(result.entries) ? result.entries : [];
+          const matrix = (result.skipped || entries.length === 0) ? '[]' : JSON.stringify(
+            entries.map(e => ({
               id: e.id,
               kind: e.kind,
               assetPath: e.assetPath,
               testPath: e.testPath || '',
             }))
           );
-          fs.appendFileSync(path, `skipped=${skipped}\n`);
-          fs.appendFileSync(path, `is-infra-change=${isInfra}\n`);
-          fs.appendFileSync(path, `matrix=${matrix}\n`);
+          console.log(`skipped=${skipped}`);
+          console.log(`matrix entries count: ${entries.length}`);
+          console.log(`matrix (first 200 chars): ${matrix.slice(0, 200)}`);
+          fs.appendFileSync(githubOutput, `skipped=${skipped}\n`);
+          fs.appendFileSync(githubOutput, `is-infra-change=${isInfra}\n`);
+          fs.appendFileSync(githubOutput, `matrix=${matrix}\n`);
           SCRIPT
         env:
           OUTPUT: ${{ steps.discover.outputs.output }}
