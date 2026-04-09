@@ -8,6 +8,18 @@ name: Evaluation Pipeline
 #   schedule            → incremental pipeline against benchmark baseline (Mondays 06:00 UTC)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'plugins/**'
+      - 'instructions/**'
+      - 'tests/**'
+      - 'tools/evaluator/**'
+      - 'website/**'
+      - 'agents/**'
+      - '.github/workflows/*.yml'
+      - '.github/workflows/*.yaml'
   pull_request:
     paths:
       - 'skills/**'
@@ -228,7 +240,8 @@ jobs:
       always() && (
         (github.event_name == 'issue_comment' && needs.gate.result == 'success') ||
         github.event_name == 'workflow_dispatch' ||
-        github.event_name == 'schedule'
+        github.event_name == 'schedule' ||
+        github.event_name == 'push'
       )
     runs-on: ubuntu-latest
     outputs:
@@ -293,7 +306,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}/tools/evaluator"
 
           if [ "${EVENT_NAME}" = "issue_comment" ]; then
-            # PR-triggered: diff between PR base and head
+            # /evaluate on PR: evaluate only the skills modified in this PR
             npx tsx src/index.ts discover \
               --repo-root "${REPO_ROOT}" \
               --base-ref "${PR_BASE_SHA}" \
@@ -301,20 +314,38 @@ jobs:
               --output "${OUTPUT}"
 
           elif [ "${EVALUATE_ALL}" = "true" ]; then
-            # Force all eligible assets
+            # Force all eligible assets, ignore baseline
             npx tsx src/index.ts discover \
               --repo-root "${REPO_ROOT}" \
               --all \
               --output "${OUTPUT}"
 
           else
-            # Incremental: compare against benchmark baseline when available
+            # push / schedule / manual: evaluate new + changed assets
+            # Prefer repo-committed summary over short-lived artifact
+            BENCHMARK_PATH="${GITHUB_WORKSPACE}/website/src/data/benchmarks/summary.json"
             if [ -f "${GITHUB_WORKSPACE}/_benchmark/summary.json" ]; then
+              BENCHMARK_PATH="${GITHUB_WORKSPACE}/_benchmark/summary.json"
+            fi
+
+            if [ -f "${BENCHMARK_PATH}" ]; then
+              echo "Using benchmark summary: ${BENCHMARK_PATH}"
               npx tsx src/index.ts discover \
                 --repo-root "${REPO_ROOT}" \
                 --all \
-                --benchmark-summary "${GITHUB_WORKSPACE}/_benchmark/summary.json" \
+                --benchmark-summary "${BENCHMARK_PATH}" \
                 --output "${OUTPUT}"
+
+              # Safety: if benchmark filtering produced 0 entries, fall back to full scan
+              ENTRY_COUNT=$(node -e "const r = require('${OUTPUT}'); console.log(r.entries ? r.entries.length : 0)" 2>/dev/null || echo "0")
+              echo "Discovered ${ENTRY_COUNT} entries after benchmark filtering"
+              if [ "${ENTRY_COUNT}" = "0" ]; then
+                echo "WARNING: benchmark filtering returned 0 entries — falling back to full scan"
+                npx tsx src/index.ts discover \
+                  --repo-root "${REPO_ROOT}" \
+                  --all \
+                  --output "${OUTPUT}"
+              fi
             else
               npx tsx src/index.ts discover \
                 --repo-root "${REPO_ROOT}" \
@@ -591,7 +622,7 @@ jobs:
           fi
 
           git add website/src/data/benchmarks/summary.json
-          git commit -m "chore: update benchmark summary [skip ci]"
+          git commit -m "chore: update benchmark summary"
           git push origin "${{ github.event.repository.default_branch }}"
 
   # ── Report ────────────────────────────────────────────────────────────────

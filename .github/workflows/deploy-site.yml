@@ -1,16 +1,12 @@
 name: Deploy Astro Site to GitHub Pages
 
 on:
-  # Trigger deployment on push to main when content changes
-  push:
+  # Deploy after evaluation completes on main — ensures benchmark data is always fresh
+  workflow_run:
+    workflows: ["Evaluation Pipeline"]
+    types: [completed]
     branches: [main]
-    paths:
-      - 'website/**'
-      - 'instructions/**'
-      - 'skills/**'
-      - 'agents/**'
-      - 'plugins/**'
-  
+
   # Allow manual deployment from Actions tab
   workflow_dispatch:
 
