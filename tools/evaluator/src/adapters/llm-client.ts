@@ -43,6 +43,13 @@ export function createLLMClient(config: LLMClientConfig): LLMClient {
   const openai = new OpenAI({
     apiKey: config.apiKey,
     baseURL: config.baseURL,
+    defaultHeaders: {
+      'editor-version': 'copilot-cli/2.4.0',
+      'editor-plugin-version': 'copilot-cli/2.4.0',
+      'openai-intent': 'copilot-cli',
+      'user-agent': 'github-copilot-cli/2.4.0',
+      'copilot-integration-id': 'copilot-cli',
+    },
   });
 
   return {

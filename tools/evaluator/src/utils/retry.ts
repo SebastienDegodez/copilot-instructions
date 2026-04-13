@@ -7,8 +7,51 @@ export interface RetryOptions {
   factor?: number;
 }
 
+/** Threshold above which a rate-limit is considered a long-term (e.g. daily) quota. */
+const LONG_TERM_QUOTA_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Returns true when the error is a rate-limit that cannot be resolved by
+ * retrying within a reasonable CI window (e.g. a per-day quota).
+ * We detect two signals:
+ *   1. retry-after header > 1 hour
+ *   2. error message contains a known long-term quota keyword
+ */
+function isNonRetryableRateLimit(err: unknown): boolean {
+  if (
+    typeof err !== 'object' ||
+    err === null ||
+    !('status' in err) ||
+    (err as { status: number }).status !== 429
+  ) {
+    return false;
+  }
+
+  // Signal 1: retry-after header exceeds CI threshold
+  if ('headers' in err) {
+    const headers = (err as { headers: Record<string, string> }).headers;
+    const retryAfter = headers?.['retry-after'];
+    if (retryAfter) {
+      const seconds = Number(retryAfter);
+      if (!Number.isNaN(seconds) && seconds * 1000 > LONG_TERM_QUOTA_THRESHOLD_MS) {
+        return true;
+      }
+    }
+  }
+
+  // Signal 2: message contains daily/hourly quota keywords
+  if ('message' in err) {
+    const message = String((err as { message: string }).message);
+    if (/ByDay|ByHour|86400|per day/i.test(message)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function getRetryDelay(err: unknown, fallbackDelay: number): number {
@@ -21,7 +64,7 @@ function getRetryDelay(err: unknown, fallbackDelay: number): number {
   ) {
     const headers = (err as { headers: Record<string, string> }).headers;
 
-    // Use retry-after header when present and positive
+    // Use retry-after header when present and positive (and within CI window)
     const retryAfter = headers['retry-after'];
     if (retryAfter) {
       const seconds = Number(retryAfter);
@@ -62,6 +105,13 @@ export async function withRetry<T>(
       return await fn();
     } catch (err) {
       lastError = err;
+
+      // Daily / hourly quotas cannot be resolved by retrying in CI — fail fast
+      if (isNonRetryableRateLimit(err)) {
+        logger.error({ err }, 'Long-term rate limit exceeded — not retrying (quota is per-day or per-hour)');
+        throw err;
+      }
+
       if (attempt === maxAttempts) break;
       const retryDelay = getRetryDelay(err, delay);
       logger.warn({ err, attempt, nextDelayMs: retryDelay }, 'Retrying after error');
