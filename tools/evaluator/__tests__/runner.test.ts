@@ -26,6 +26,8 @@ function makeMockLLMClient(): LLMClient {
     complete: vi.fn()
       .mockResolvedValueOnce({ content: 'function hello() { return "hello"; }', tokensInput: 100, tokensOutput: 200 })
       .mockResolvedValueOnce({ content: '{"score": 8, "reasoning": "Good"}', tokensInput: 50, tokensOutput: 30 }),
+    completeWithTools: vi.fn()
+      .mockResolvedValueOnce({ content: 'function hello() { return "hello"; }', tokensInput: 100, tokensOutput: 200 }),
   };
 }
 

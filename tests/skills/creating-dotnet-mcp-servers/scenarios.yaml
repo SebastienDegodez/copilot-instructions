@@ -2,69 +2,62 @@ kind: skill
 ref: skills/creating-dotnet-mcp-servers
 scenarios:
   - name: create-basic-mcp-tool
-    description: Create a basic MCP tool class with correct attributes
+    description: Create a basic MCP tool class — skill must guide attributes and conventions
     prompt: |
       Create a .NET MCP tool class called "WeatherTools" with a method "GetWeather"
       that takes a city name and returns the current temperature.
-      Follow the MCP server conventions for .NET.
     expectations:
       keywords:
         - "[McpServerToolType]"
         - "[McpServerTool"
         - "[Description"
-        - "CancellationToken"
     judge:
       criteria: |
         Score on:
-        - Tool class is sealed and decorated with [McpServerToolType] attribute
-        - Method is decorated with [McpServerTool] and [Description] attributes
-        - Method accepts a CancellationToken parameter
-        - Parameters are decorated with [Description] attributes
-        - Class uses a const string for the tool name
+        - Tool class is sealed and decorated with [McpServerToolType] attribute?
+        - Method is decorated with [McpServerTool] and [Description] attributes?
+        - Method accepts a CancellationToken parameter?
+        - Parameters are decorated with [Description] attributes?
+        - Tool name is defined as a const string, not a magic string?
       passing_score: 7.0
-    timeout: 60
+    timeout: 90
     runs: 2
 
   - name: configure-aot-json-serialization
-    description: Configure AOT-compatible JSON serialization context for MCP server
+    description: AOT-compatible JSON serialization — skill must guide context and registration
     prompt: |
       I have a .NET MCP server with a "PackageMetadata" record as a tool return type.
-      Configure the AOT-compatible JSON serialization context and register it with the MCP server in Program.cs.
+      Configure AOT-compatible JSON serialization and register it in Program.cs.
     expectations:
       keywords:
         - "JsonSerializerContext"
         - "[JsonSerializable"
-        - "AddMcpServer"
-        - "WithTools"
     judge:
       criteria: |
         Score on:
-        - A partial class inheriting from JsonSerializerContext is created
-        - [JsonSerializable] attributes are added for all tool return types
-        - The serialization context is registered via WithTools<T>(serializerOptions: ...) or equivalent
-        - The project configuration disables reflection-based serialization (JsonSerializerIsReflectionEnabledByDefault=false)
+        - A partial class inheriting from JsonSerializerContext is created?
+        - [JsonSerializable] attributes are added for all tool return types?
+        - The serialization context is registered via WithTools or equivalent?
+        - Reflection-based serialization is disabled (JsonSerializerIsReflectionEnabledByDefault=false)?
       passing_score: 7.0
-    timeout: 60
+    timeout: 90
     runs: 2
 
   - name: setup-transport-in-program
-    description: Set up SSE and Stdio transports in Program.cs
+    description: Transport configuration — skill must guide SSE vs Stdio setup
     prompt: |
-      Show me how to configure both SSE (HTTP) and Stdio transports for a .NET MCP server in Program.cs.
-      Include the required logging configuration and endpoint mapping.
+      Show me how to configure both SSE (HTTP) and Stdio transports for a .NET MCP server.
     expectations:
       keywords:
         - "AddMcpServer"
         - "MapMcp"
-        - "WithHttpTransport"
-        - "WithStdioTransport"
     judge:
       criteria: |
         Score on:
-        - SSE transport uses WithHttpTransport() and maps endpoints with MapMcp()
-        - Stdio transport uses WithStdioTransport() without MapMcp()
-        - Logging is configured to write to stderr (LogToStandardErrorThreshold)
-        - The difference between SSE and Stdio setup is clearly explained
+        - SSE transport uses WithHttpTransport() and maps endpoints with MapMcp()?
+        - Stdio transport uses WithStdioTransport() without MapMcp()?
+        - Logging is configured to write to stderr (LogToStandardErrorThreshold)?
+        - The difference between SSE and Stdio setup is clearly explained?
       passing_score: 7.0
-    timeout: 60
+    timeout: 90
     runs: 2

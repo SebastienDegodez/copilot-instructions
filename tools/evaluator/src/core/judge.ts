@@ -1,4 +1,4 @@
-import type { LLMClient } from '../adapters/llm-client.js';
+import type { LLMClient, ToolDefinition, ToolHandler } from '../adapters/llm-client.js';
 import type { Scenario } from '../config/schema.js';
 import type { ScenarioResult, ScenarioRun } from './types.js';
 import { logger } from '../utils/logger.js';
@@ -13,6 +13,12 @@ Always respond with a JSON object in the following format:
   "score": <number 0-10>,
   "reasoning": "<brief explanation>"
 }`;
+
+const RUN_SYSTEM_PROMPT = `You are a helpful AI coding assistant.
+You have access to a read_file tool that lets you read documentation and reference files.
+IMPORTANT: Before answering, use the read_file tool to read the relevant skill documentation.
+Start by listing available files, then read the main SKILL.md and any references that seem relevant to the question.
+Only after reading the documentation should you provide your answer.`;
 
 function buildJudgePrompt(scenario: Scenario, response: string): string {
   return `## Evaluation Task
@@ -36,6 +42,51 @@ ${scenario.judge.criteria}
 ### Scoring Instructions
 Evaluate the AI response strictly on the provided criteria.
 Respond ONLY with a JSON object: { "score": <0-10>, "reasoning": "<explanation>" }`;
+}
+
+/**
+ * Build tool definitions and handlers for the read_file tool,
+ * backed by a map of asset files.
+ */
+function buildReadFileTools(
+  assetFiles: Map<string, string>,
+): { tools: ToolDefinition[]; handlers: Map<string, ToolHandler> } {
+  const fileList = [...assetFiles.keys()].join('\n');
+
+  const tools: ToolDefinition[] = [
+    {
+      name: 'read_file',
+      description: `Read a documentation file from the skill/plugin. Available files:\n${fileList}`,
+      parameters: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: `Relative path of the file to read. Available: ${[...assetFiles.keys()].join(', ')}`,
+          },
+        },
+        required: ['path'],
+      },
+    },
+  ];
+
+  const handlers = new Map<string, ToolHandler>();
+  handlers.set('read_file', async (args: Record<string, unknown>) => {
+    const path = String(args['path'] ?? '');
+    const content = assetFiles.get(path);
+    if (content !== undefined) {
+      return content;
+    }
+    // Try without leading slash or with normalized path
+    for (const [key, value] of assetFiles) {
+      if (key.endsWith(path) || path.endsWith(key)) {
+        return value;
+      }
+    }
+    return `File not found: "${path}". Available files: ${[...assetFiles.keys()].join(', ')}`;
+  });
+
+  return { tools, handlers };
 }
 
 function checkKeywords(
@@ -75,12 +126,27 @@ export async function judgeScenarioRun(
   scenario: Scenario,
   prompt: string,
   runNumber: number,
+  assetFiles?: Map<string, string>,
 ): Promise<ScenarioRun> {
-  logger.debug({ scenario: scenario.name, run: runNumber }, 'Running scenario');
+  logger.debug({ scenario: scenario.name, run: runNumber, hasTools: !!assetFiles?.size }, 'Running scenario');
 
-  const runResponse = await withRetry(() =>
-    llmClient.complete(prompt, { maxTokens: 4000, temperature: 0.7 }),
-  );
+  let runResponse;
+  if (assetFiles && assetFiles.size > 0) {
+    // Use tool-based completion — LLM can read skill files progressively
+    const { tools, handlers } = buildReadFileTools(assetFiles);
+    runResponse = await withRetry(() =>
+      llmClient.completeWithTools(prompt, tools, handlers, {
+        systemPrompt: RUN_SYSTEM_PROMPT,
+        maxTokens: 4000,
+        temperature: 0.7,
+      }),
+    );
+  } else {
+    // Fallback to simple completion (no skill files available)
+    runResponse = await withRetry(() =>
+      llmClient.complete(prompt, { maxTokens: 4000, temperature: 0.7 }),
+    );
+  }
 
   const responseText = runResponse.content;
   const { found: keywordsFound, missing: keywordsMissing } = checkKeywords(
@@ -133,12 +199,13 @@ export async function judgeScenarioRun(
 export async function judgeScenario(
   llmClient: LLMClient,
   scenario: Scenario,
+  assetFiles?: Map<string, string>,
 ): Promise<ScenarioResult> {
   logger.info({ scenario: scenario.name, runs: scenario.runs }, 'Evaluating scenario');
 
   const runs: ScenarioRun[] = [];
   for (let i = 1; i <= scenario.runs; i++) {
-    const run = await judgeScenarioRun(llmClient, scenario, scenario.prompt, i);
+    const run = await judgeScenarioRun(llmClient, scenario, scenario.prompt, i, assetFiles);
     runs.push(run);
   }
 
