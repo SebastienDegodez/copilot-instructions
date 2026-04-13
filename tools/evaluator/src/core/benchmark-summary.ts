@@ -21,7 +21,15 @@ export function mergeBenchmarkSummary(
     history: [...e.history],
   }));
 
-  for (const result of results) {
+  // Skipped results (all runs errored) are excluded — they reflect infrastructure
+  // failures, not skill quality, and should not pollute the benchmark.
+  const evaluatedResults = results.filter((r) => !r.skipped);
+
+  if (evaluatedResults.length === 0) {
+    return { summary: existing, changed: false };
+  }
+
+  for (const result of evaluatedResults) {
     const historyEntry: BenchmarkHistoryEntry = {
       date: result.finishedAt,
       commit: { sha: result.commitSha, url: buildCommitUrl(result.commitSha) },
@@ -33,9 +41,9 @@ export function mergeBenchmarkSummary(
       source: result.source,
     };
 
-    const existing = entries.find((e) => e.id === result.id);
-    if (existing) {
-      existing.history.push(historyEntry);
+    const existingEntry = entries.find((e) => e.id === result.id);
+    if (existingEntry) {
+      existingEntry.history.push(historyEntry);
     } else {
       entries.push({
         id: result.id,

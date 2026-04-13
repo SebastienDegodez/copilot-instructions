@@ -15,6 +15,15 @@ function makeMockLLMClient(responses: Array<{ content: string; tokensInput?: num
         tokensOutput: response?.tokensOutput ?? 200,
       });
     }),
+    completeWithTools: vi.fn().mockImplementation(() => {
+      const response = responses[callCount % responses.length];
+      callCount++;
+      return Promise.resolve({
+        content: response?.content ?? '',
+        tokensInput: response?.tokensInput ?? 100,
+        tokensOutput: response?.tokensOutput ?? 200,
+      });
+    }),
   };
 }
 

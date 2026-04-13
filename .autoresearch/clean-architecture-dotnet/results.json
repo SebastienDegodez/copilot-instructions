@@ -1,56 +1,52 @@
 {
   "skill_name": "clean-architecture-dotnet",
   "status": "complete",
-  "current_experiment": 4,
-  "baseline_score": 72.0,
-  "best_score": 100.0,
+  "autoresearch_date": "2026-04-13",
+  "evals_count": 22,
+  "runs_per_experiment": 8,
+  "current_experiment": 15,
+  "baseline_score": 62.5,
+  "best_score": 99.4,
   "experiments": [
-    {
-      "id": 0,
-      "score": 18,
-      "max_score": 25,
-      "pass_rate": 72.0,
-      "status": "baseline",
-      "description": "original skill — no changes"
-    },
-    {
-      "id": 1,
-      "score": 22,
-      "max_score": 25,
-      "pass_rate": 88.0,
-      "status": "keep",
-      "description": "added explicit SharedKernel section with layer table row, dependency rule, code example"
-    },
-    {
-      "id": 2,
-      "score": 25,
-      "max_score": 25,
-      "pass_rate": 100.0,
-      "status": "keep",
-      "description": "added Domain Events section: declare in Domain, dispatch in Application, with aggregate factory + event code"
-    },
-    {
-      "id": 3,
-      "score": 25,
-      "max_score": 25,
-      "pass_rate": 100.0,
-      "status": "keep",
-      "description": "added DDD vs POCO quick decision table: when to use AggregateRoot / ValueObject / plain record"
-    },
-    {
-      "id": 4,
-      "score": 25,
-      "max_score": 25,
-      "pass_rate": 100.0,
-      "status": "keep",
-      "description": "added SharedKernel anti-pattern to Common Mistakes: SK must not reference Domain"
-    }
+    { "id": 0,  "score": 100, "max_score": 160, "pass_rate": 62.5, "status": "baseline", "description": "run 3 baseline — 20 strict evals × 8 scenarios; E6/E7/E8 fail on private ctor / *Service in Red Flags / ambiguous comment" },
+    { "id": 1,  "score": 106, "max_score": 160, "pass_rate": 66.3, "status": "keep",    "description": "fix Pattern B comment Application/Domain → defined in Domain (write path)" },
+    { "id": 2,  "score": 113, "max_score": 160, "pass_rate": 70.6, "status": "keep",    "description": "add private constructor + static Create factory to Order aggregate in Domain Events" },
+    { "id": 3,  "score": 118, "max_score": 160, "pass_rate": 73.8, "status": "keep",    "description": "add *Service anti-pattern to Red Flags (was only in Pattern A callout)" },
+    { "id": 4,  "score": 126, "max_score": 160, "pass_rate": 78.8, "status": "keep",    "description": "add CQRS Bus callout: 3 explicit named conditions — logging, validation pipeline, read/write asymmetry" },
+    { "id": 5,  "score": 124, "max_score": 160, "pass_rate": 77.5, "status": "discard", "description": "tried moving DDD optional table before patterns — E5+E12 regressed; reverted" },
+    { "id": 6,  "score": 134, "max_score": 160, "pass_rate": 83.8, "status": "keep",    "description": "add 'Aggregate vs POCO test' callout — if you never write if/throw to protect state, it has no invariants" },
+    { "id": 7,  "score": 141, "max_score": 160, "pass_rate": 88.1, "status": "keep",    "description": "add Iron Law callout with 4 concrete violation examples + specific import statements" },
+    { "id": 8,  "score": 141, "max_score": 160, "pass_rate": 88.1, "status": "discard", "description": "tried adding IDomainService interface concept — 0 improvement, added complexity; reverted" },
+    { "id": 9,  "score": 147, "max_score": 160, "pass_rate": 91.9, "status": "keep",    "description": "in CancelOrderUseCase, explicit UserId typed param + comment; E11 strict passes" },
+    { "id": 10, "score": 152, "max_score": 160, "pass_rate": 95.0, "status": "keep",    "description": "expand ICurrentUser 'why' — HTTP lifecycle + testable in isolation; E10 strict passes; ceiling candidate" },
+    { "id": 11, "score": 156, "max_score": 160, "pass_rate": 97.5, "status": "keep",    "description": "add Common Mistakes row for handler containing if-logic + delegation example in handler" },
+    { "id": 12, "score": 156, "max_score": 160, "pass_rate": 97.5, "status": "discard", "description": "tried condensing CQRS Bus callout to 2 conditions — E4 regressed in scenario H; reverted" },
+    { "id": 13, "score": 158, "max_score": 160, "pass_rate": 98.8, "status": "keep",    "description": "tighten E16 — add standalone rule sentence in Interface Placement; 3 consecutive >=95% ceiling hit" },
+    { "id": 14, "score": 167, "max_score": 168, "pass_rate": 99.4, "status": "keep",    "description": "add E21 — read access gate in Application vs domain invariant; fix Common Mistakes ambiguous 'if/business logic' row; move Interface Placement to reference file" },
+    { "id": 15, "score": 175, "max_score": 176, "pass_rate": 99.4, "status": "keep",    "description": "add E22 — fetch-then-check (404/403 semantic) vs filter-in-query anti-pattern; document why GetByIdAsync must stay neutral; add ListByOwnerAsync exception for large lists" }
   ],
   "eval_breakdown": [
-    {"name": "Layer identification accuracy", "pass_count": 5, "total": 5},
-    {"name": "CQRS bus discipline", "pass_count": 5, "total": 5},
-    {"name": "Shared Kernel placement", "pass_count": 5, "total": 5},
-    {"name": "Concrete C# code example", "pass_count": 5, "total": 5},
-    {"name": "Zero Iron Law violations", "pass_count": 5, "total": 5}
+    { "name": "E1  Iron Law direction+fix",                   "pass_count": 8, "total": 8 },
+    { "name": "E2  CQS void in Pattern A",                    "pass_count": 8, "total": 8 },
+    { "name": "E3  CQS returns in Pattern A",                 "pass_count": 8, "total": 8 },
+    { "name": "E4  CQRS Bus 3 named conditions",              "pass_count": 7, "total": 8 },
+    { "name": "E5  DDD invariants+state test",                "pass_count": 8, "total": 8 },
+    { "name": "E6  Aggregate private ctor+Create",            "pass_count": 8, "total": 8 },
+    { "name": "E7  *Service anti-pattern RedFlag",            "pass_count": 8, "total": 8 },
+    { "name": "E8  Write repo in Domain (no ambig)",          "pass_count": 7, "total": 8 },
+    { "name": "E9  Read service in Application",              "pass_count": 8, "total": 8 },
+    { "name": "E10 ICurrentUser in App+WHY",                  "pass_count": 8, "total": 8 },
+    { "name": "E11 UserId typed param in Domain",             "pass_count": 8, "total": 8 },
+    { "name": "E12 Handler no if-logic delegated",            "pass_count": 7, "total": 8 },
+    { "name": "E13 Layer table >=4 correct",                  "pass_count": 8, "total": 8 },
+    { "name": "E14 Transitive!=permission",                   "pass_count": 8, "total": 8 },
+    { "name": "E15 Sealed Domain types",                      "pass_count": 8, "total": 8 },
+    { "name": "E16 Write=domain Read=VM rule",                "pass_count": 6, "total": 8 },
+    { "name": "E17 Red Flag CQRS overuse",                    "pass_count": 8, "total": 8 },
+    { "name": "E18 CommonMistakes >=5 rows",                  "pass_count": 8, "total": 8 },
+    { "name": "E19 Flowchart diamond gateway",                "pass_count": 8, "total": 8 },
+    { "name": "E20 Events declare vs dispatch",               "pass_count": 8, "total": 8 },
+    { "name": "E21 Read gate=App, mutation invariant=Domain", "pass_count": 7, "total": 8 },
+    { "name": "E22 Fetch-then-check not filter-in-query",     "pass_count": 7, "total": 8 }
   ]
 }

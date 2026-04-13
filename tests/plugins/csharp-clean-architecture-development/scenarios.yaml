@@ -4,29 +4,275 @@ scenarios:
   - name: scaffold-clean-architecture-solution
     description: Scaffold a complete Clean Architecture .NET solution
     prompt: |
-      Create a .NET 9 Clean Architecture solution for a "ProductCatalog" domain.
-      The solution should include:
-      - Domain layer with entities (Product, Category)
-      - Application layer with CQRS commands/queries using MediatR
-      - Infrastructure layer with EF Core repository implementations
-      - API layer with minimal API endpoints
-      Follow clean architecture dependency rules strictly.
+      Create a .NET 10 Clean Architecture solution for a "ProductCatalog" domain.
+      Include Product and Category entities with create and read operations.
+      Use EF Core for persistence and minimal API endpoints.
     expectations:
       keywords:
         - "Domain"
         - "Application"
         - "Infrastructure"
-        - "IRepository"
-        - "MediatR"
       patterns:
-        - '/class \w+Command/'
-        - '/class \w+Query/'
+        - '/sealed class Product/'
+        - '/static .+ Create/'
     judge:
       criteria: |
         Score on:
-        - Architecture compliance: Correct layer separation and dependency direction?
-        - CQRS implementation: Proper command/query separation with MediatR?
-        - Code quality: Clean, idiomatic C# following the plugin's conventions?
+        - Architecture compliance: Correct 4-layer separation (Domain, Application, Infrastructure, API) with proper dependency direction?
+        - CQS compliance: Commands are void/Task, queries return values? No MediatR for this simple scope?
+        - Domain model: Sealed classes with private constructors and static Create factory methods?
+        - Naming: Application classes named *UseCase, not *Service?
       passing_score: 7.5
     timeout: 120
+    runs: 2
+
+  - name: cqs-pattern-a-crud-no-bus
+    description: Simple CRUD feature — skill must guide toward CQS UseCase without CQRS bus
+    prompt: |
+      Implement a "Tag" management feature (create and get by ID) in an existing Clean Architecture solution.
+      Tags have no business rules or invariants — they are pure CRUD.
+    expectations:
+      keywords:
+        - "UseCase"
+        - "Task"
+      patterns:
+        - '/sealed class Tag\w*UseCase/'
+        - '/async Task\b/'
+    judge:
+      criteria: |
+        Score on:
+        - CQS compliance: Create method is void/Task (no return value), Get method returns a ViewModel?
+        - No CQRS bus: No ICommandBus, IQueryBus, or MediatR used for this simple CRUD?
+        - Naming: Class named *UseCase, not *Service or *Handler?
+        - Layer placement: UseCase in Application, repository interface in Application, implementation in Infrastructure?
+      passing_score: 7.5
+    timeout: 60
+    runs: 2
+
+  - name: ddd-aggregate-invariant-domain-layer
+    description: Domain aggregate with invariants — skill must guide enforcement placement
+    prompt: |
+      Implement an Order aggregate with the following business rules:
+      - An order can only be cancelled if it is in "Pending" status
+      - Only the owner can cancel an order
+      Include the Application handler that orchestrates the cancellation.
+    expectations:
+      keywords:
+        - "DomainException"
+        - "sealed"
+        - "Cancel"
+      patterns:
+        - '/private \w+\(/'
+        - '/throw new DomainException/'
+    judge:
+      criteria: |
+        Score on:
+        - Aggregate design: Private constructor + static Create factory present?
+        - Invariant enforcement: DomainException thrown inside Order.Cancel, not in the handler?
+        - Handler purity: Handler orchestrates only — no if/throw for business rules?
+        - Sealed: Order class is sealed?
+      passing_score: 7.5
+    timeout: 60
+    runs: 2
+
+  - name: interface-placement-repo-write-vs-read
+    description: Repository interface placement — skill must guide layer decision
+    prompt: |
+      In a Clean Architecture solution, define these three interfaces and place each in the correct layer:
+      1. IOrderRepository — write side for an Order aggregate (which has invariants)
+      2. ITagRepository — write side for a Tag CRUD entity (no invariants)
+      3. IOrderReadService — read side returning OrderViewModel
+      Explain why each goes in its layer.
+    expectations:
+      keywords:
+        - "IOrderRepository"
+        - "ITagRepository"
+        - "IOrderReadService"
+    judge:
+      criteria: |
+        Score on:
+        - IOrderRepository in Domain (persists a Domain aggregate)?
+        - ITagRepository in Application (no aggregate, CRUD only)?
+        - IOrderReadService in Application (read service always in Application)?
+        - Reasoning provided for each placement?
+      passing_score: 7.5
+    timeout: 60
+    runs: 2
+
+  - name: authorization-placement-three-tiers
+    description: Authorization placement — skill must guide correct layer for each check type
+    prompt: |
+      For an Order management system, implement these three authorization rules:
+      1. JWT token validation and role gate ("Admin" role required for admin endpoints)
+      2. Only the order owner can view their own order (read operation)
+      3. Only the owner can cancel an order (write/mutation operation)
+      Place each rule in the correct architectural layer.
+    expectations:
+      keywords:
+        - "ICurrentUser"
+        - "ForbiddenException"
+        - "DomainException"
+      patterns:
+        - '/throw new ForbiddenException/'
+        - '/throw new DomainException/'
+    judge:
+      criteria: |
+        Score on:
+        - ICurrentUser defined in Application, implemented in Infrastructure?
+        - Read access gate enforced in Application use case (ForbiddenException)?
+        - Mutation invariant enforced in Domain aggregate (DomainException)?
+        - Domain receives UserId as value parameter, not ICurrentUser directly?
+        - JWT/role gate stays in Infrastructure?
+      passing_score: 7.5
+    timeout: 90
+    runs: 2
+
+  - name: fetch-then-check-not-filter-in-query
+    description: Access policy pattern — skill must guide fetch-then-check over filter-in-query
+    prompt: |
+      Implement a use case that retrieves an order by ID. Only the owner should be able to view it.
+      Handle both "not found" and "not authorized" cases with appropriate error responses.
+    expectations:
+      keywords:
+        - "NotFoundException"
+        - "ForbiddenException"
+        - "GetByIdAsync"
+      patterns:
+        - '/throw new NotFoundException/'
+        - '/throw new ForbiddenException/'
+    judge:
+      criteria: |
+        Score on:
+        - GetByIdAsync takes only an id parameter (no ownerId filter in the query)?
+        - NotFoundException thrown when order not found (404 semantic)?
+        - ForbiddenException thrown when owner mismatch (403 semantic)?
+        - Fetch-then-check pattern used (not filter-in-query)?
+        - Access policy stays in use case, not repository?
+      passing_score: 7.5
+    timeout: 60
+    runs: 2
+
+  - name: iron-law-violation-detection
+    description: Must detect and fix Iron Law violations in provided code
+    prompt: |
+      Review the following code and identify all Clean Architecture Iron Law violations.
+      For each violation, explain which rule is broken and how to fix it:
+
+      ```csharp
+      // OrdersController.cs
+      using MyApp.Infrastructure.Data;
+      public class OrdersController : ControllerBase
+      {
+          private readonly AppDbContext _db;
+          public OrdersController(AppDbContext db) { _db = db; }
+          public async Task<IActionResult> Cancel(Guid id)
+          {
+              var order = await _db.Orders.FindAsync(id);
+              order.Status = "Cancelled";
+              await _db.SaveChangesAsync();
+              return Ok();
+          }
+      }
+
+      // Order.cs (Domain)
+      using MyApp.Infrastructure.Email;
+      public class Order
+      {
+          public void Cancel() { EmailService.Send("cancelled"); }
+      }
+      ```
+    expectations:
+      keywords:
+        - "violation"
+        - "Infrastructure"
+        - "Domain"
+        - "interface"
+      patterns:
+        - '/AppDbContext|DbContext/'
+        - '/using MyApp\.Infrastructure/'
+    judge:
+      criteria: |
+        Score on:
+        - Identifies API directly using AppDbContext (bypasses Application layer)?
+        - Identifies Domain importing Infrastructure (Iron Law violation)?
+        - Proposes correct fix: move DB access to Infrastructure behind an interface?
+        - Proposes correct fix: Domain should not call EmailService directly?
+        - Explains correct layering direction (outer → inner only)?
+      passing_score: 7.5
+    timeout: 60
+    runs: 2
+
+  - name: cqrs-bus-optional-conditions
+    description: CQRS bus decision — skill must guide when to use or skip MediatR
+    prompt: |
+      A developer wants to add MediatR to a simple e-commerce API that currently has
+      2 use cases (CreateOrder, GetOrder) with no cross-cutting pipeline concerns.
+      Should they add MediatR? Justify your answer and show the correct pattern.
+    expectations:
+      keywords:
+        - "cross-cutting"
+        - "UseCase"
+      patterns:
+        - '/\bno\b|\bno,\b|\bnot\b/i'
+    judge:
+      criteria: |
+        Score on:
+        - Recommends NOT adding MediatR at this scale?
+        - Names the 3 conditions: cross-cutting pipeline, >3 use cases, read/write asymmetry?
+        - Shows CQS Application UseCase as the correct alternative?
+        - Command methods are void/Task in the example?
+        - Class is named *UseCase, not *Service?
+      passing_score: 7.5
+    timeout: 60
+    runs: 2
+
+  - name: domain-events-declare-vs-dispatch
+    description: Domain events — skill must guide where to declare and where to dispatch
+    prompt: |
+      Implement an OrderPlacedEvent for the Order aggregate.
+      The event should be raised when a new order is created.
+      Include the aggregate and the Application handler that processes the command.
+    expectations:
+      keywords:
+        - "OrderPlacedEvent"
+        - "AddDomainEvent"
+        - "DomainEvents"
+      patterns:
+        - '/sealed class OrderPlacedEvent/'
+        - '/AddDomainEvent\(/'
+    judge:
+      criteria: |
+        Score on:
+        - OrderPlacedEvent declared in Domain layer (sealed class)?
+        - Event raised via AddDomainEvent inside Order.Create (not in handler)?
+        - Dispatched in Application handler after repository save?
+        - Domain does not reference IDomainEventDispatcher directly?
+        - Order.Create uses private constructor + static factory pattern?
+      passing_score: 7.5
+    timeout: 60
+    runs: 2
+
+  - name: shared-kernel-dependencies
+    description: SharedKernel violations — skill must guide what belongs and what does not
+    prompt: |
+      A multi-context solution has a SharedKernel project. A developer added:
+      - A concrete Money value object
+      - An OrderCreatedEvent
+      - A reference from SharedKernel to Orders.Domain for the OrderId type
+      Review this setup and identify any problems.
+    expectations:
+      keywords:
+        - "SharedKernel"
+        - "interface"
+        - "Domain"
+    judge:
+      criteria: |
+        Score on:
+        - Identifies Money value object should NOT be in SharedKernel (context-specific)?
+        - Identifies OrderCreatedEvent should NOT be in SharedKernel (context-specific)?
+        - Identifies SharedKernel referencing Domain is an Iron Law violation?
+        - Shows SharedKernel should contain only generic interfaces and base classes?
+        - SharedKernel depends on nothing?
+      passing_score: 7.5
+    timeout: 60
     runs: 2

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autoresearch — creating-dotnet-mcp-servers</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fafafa; color: #333; padding: 24px; }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  .subtitle { color: #888; margin-bottom: 24px; font-size: 0.9rem; }
+  .status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; margin-bottom: 16px; }
+  .status.preparing { background: #FFF3CD; color: #856404; }
+  .status.running { background: #D1ECF1; color: #0C5460; }
+  .status.complete { background: #D4EDDA; color: #155724; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center; }
+  .card .value { font-size: 2rem; font-weight: 700; color: #2c3e50; }
+  .card .label { font-size: 0.8rem; color: #888; margin-top: 4px; }
+  .chart-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 24px; max-height: 350px; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 24px; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
+  th { background: #f8f9fa; font-weight: 600; color: #555; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
+  .badge.baseline { background: #D6EAF8; color: #1B4F72; }
+  .badge.keep { background: #D5F5E3; color: #1E8449; }
+  .badge.discard { background: #FADBD8; color: #922B21; }
+  .eval-bar { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .eval-bar .bar { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+  .eval-bar .fill { height: 100%; border-radius: 4px; }
+  .eval-bar .pct { font-size: 0.8rem; min-width: 40px; text-align: right; }
+</style>
+</head>
+<body>
+<h1>🔬 Autoresearch — creating-dotnet-mcp-servers</h1>
+<p class="subtitle">Autonomous skill optimization loop</p>
+<div id="status-badge"></div>
+<div class="cards" id="cards"></div>
+<div class="chart-container"><canvas id="chart"></canvas></div>
+<h3 style="margin-bottom:12px">Experiments</h3>
+<table id="exp-table"><thead><tr><th>#</th><th>Score</th><th>Pass Rate</th><th>Status</th><th>Description</th></tr></thead><tbody></tbody></table>
+<h3 style="margin-bottom:12px">Eval Breakdown</h3>
+<div id="eval-breakdown"></div>
+
+<script>
+let chart = null;
+async function refresh() {
+  try {
+    const res = await fetch('results.json?t=' + Date.now());
+    const d = await res.json();
+    // Status
+    document.getElementById('status-badge').innerHTML =
+      `<span class="status ${d.status}">${d.status.toUpperCase()}${d.status === 'running' ? ' — experiment ' + d.current_experiment : ''}</span>`;
+    // Cards
+    const exps = d.experiments || [];
+    const kept = exps.filter(e => e.status === 'keep').length;
+    const discarded = exps.filter(e => e.status === 'discard').length;
+    document.getElementById('cards').innerHTML = `
+      <div class="card"><div class="value">${d.baseline_score.toFixed(1)}%</div><div class="label">Baseline</div></div>
+      <div class="card"><div class="value">${d.best_score.toFixed(1)}%</div><div class="label">Best Score</div></div>
+      <div class="card"><div class="value">${exps.length}</div><div class="label">Experiments</div></div>
+      <div class="card"><div class="value">${kept}/${kept+discarded||1}</div><div class="label">Keep Rate</div></div>`;
+    // Chart
+    if (exps.length > 0) {
+      const labels = exps.map(e => '#' + e.id);
+      const data = exps.map(e => e.pass_rate);
+      const colors = exps.map(e => e.status === 'baseline' ? '#5DADE2' : e.status === 'keep' ? '#58D68D' : '#EC7063');
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById('chart'), {
+        type: 'line',
+        data: { labels, datasets: [{
+          label: 'Pass Rate %', data, borderColor: '#5DADE2', backgroundColor: 'rgba(93,173,226,0.1)',
+          fill: true, tension: 0.3, pointBackgroundColor: colors, pointRadius: 6
+        }]},
+        options: { responsive: true, maintainAspectRatio: false,
+          scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' }}},
+          plugins: { legend: { display: false }}}
+      });
+    }
+    // Table
+    const tbody = document.querySelector('#exp-table tbody');
+    tbody.innerHTML = exps.map(e => `<tr>
+      <td>${e.id}</td><td>${e.score}/${e.max_score}</td><td>${e.pass_rate.toFixed(1)}%</td>
+      <td><span class="badge ${e.status}">${e.status}</span></td><td>${e.description}</td>
+    </tr>`).join('');
+    // Eval breakdown
+    const bd = d.eval_breakdown || [];
+    document.getElementById('eval-breakdown').innerHTML = bd.map(ev => {
+      const pct = ev.total > 0 ? (ev.pass_count / ev.total * 100) : 0;
+      const color = pct >= 80 ? '#58D68D' : pct >= 50 ? '#F4D03F' : '#EC7063';
+      return `<div class="eval-bar"><span style="min-width:200px;font-size:0.85rem">${ev.name}</span>
+        <div class="bar"><div class="fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="pct">${pct.toFixed(0)}%</span></div>`;
+    }).join('');
+  } catch(e) { console.error('Refresh failed:', e); }
+}
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>
