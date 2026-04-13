@@ -205,12 +205,34 @@ export async function judgeScenario(
 
   const runs: ScenarioRun[] = [];
   for (let i = 1; i <= scenario.runs; i++) {
-    const run = await judgeScenarioRun(llmClient, scenario, scenario.prompt, i, assetFiles);
-    runs.push(run);
+    try {
+      const run = await judgeScenarioRun(llmClient, scenario, scenario.prompt, i, assetFiles);
+      runs.push(run);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error({ err, scenario: scenario.name, run: i }, 'Run failed due to error — marking as errored');
+      runs.push({
+        run: i,
+        response: '',
+        score: 0,
+        passed: false,
+        keywordsFound: [],
+        keywordsMissing: [],
+        tokensInput: 0,
+        tokensOutput: 0,
+        error: message,
+      });
+    }
   }
 
-  const averageScore = runs.reduce((sum, r) => sum + r.score, 0) / runs.length;
-  const passRate = runs.filter((r) => r.passed).length / runs.length;
+  // Exclude errored runs from scoring — they reflect infrastructure failures, not skill quality
+  const validRuns = runs.filter((r) => !r.error);
+  const averageScore = validRuns.length > 0
+    ? validRuns.reduce((sum, r) => sum + r.score, 0) / validRuns.length
+    : 0;
+  const passRate = validRuns.length > 0
+    ? validRuns.filter((r) => r.passed).length / validRuns.length
+    : 0;
 
   return {
     scenarioName: scenario.name,
@@ -218,6 +240,6 @@ export async function judgeScenario(
     runs,
     averageScore,
     passRate,
-    passed: averageScore >= scenario.judge.passing_score,
+    passed: validRuns.length > 0 && averageScore >= scenario.judge.passing_score,
   };
 }

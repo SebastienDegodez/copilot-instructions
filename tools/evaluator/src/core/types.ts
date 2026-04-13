@@ -24,6 +24,8 @@ export interface ScenarioRun {
   keywordsMissing: string[];
   tokensInput: number;
   tokensOutput: number;
+  /** Set when the run failed due to an API or infrastructure error (not an eval failure). */
+  error?: string;
 }
 
 export interface ScenarioResult {
@@ -47,6 +49,8 @@ export interface EvaluationResult {
   overallScore: number;
   passRate: number;
   passed: boolean;
+  /** True when all runs errored out (API failure) — result is excluded from the benchmark. */
+  skipped: boolean;
   totalTokensInput: number;
   totalTokensOutput: number;
   source: 'pr' | 'scheduled' | 'manual';

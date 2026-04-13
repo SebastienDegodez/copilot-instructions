@@ -85,6 +85,7 @@ export async function runEvaluation(
       overallScore: 0,
       passRate: 0,
       passed: false,
+      skipped: true,
       totalTokensInput: 0,
       totalTokensOutput: 0,
       source: options.source,
@@ -126,12 +127,15 @@ export async function runEvaluation(
       : 0;
   const passed = passRate === 1.0;
 
-  const totalTokensInput = scenarioResults
-    .flatMap((r) => r.runs)
-    .reduce((sum, run) => sum + run.tokensInput, 0);
-  const totalTokensOutput = scenarioResults
-    .flatMap((r) => r.runs)
-    .reduce((sum, run) => sum + run.tokensOutput, 0);
+  // Skipped = every single run across all scenarios was an infrastructure error
+  const allRuns = scenarioResults.flatMap((r) => r.runs);
+  const skipped = allRuns.length > 0 && allRuns.every((r) => r.error);
+  if (skipped) {
+    logger.warn({ entry: entry.id }, 'All runs errored — marking evaluation as skipped (excluded from benchmark)');
+  }
+
+  const totalTokensInput = allRuns.reduce((sum, run) => sum + run.tokensInput, 0);
+  const totalTokensOutput = allRuns.reduce((sum, run) => sum + run.tokensOutput, 0);
 
   const finishedAt = new Date().toISOString();
   logger.info(
@@ -151,6 +155,7 @@ export async function runEvaluation(
     overallScore,
     passRate,
     passed,
+    skipped,
     totalTokensInput,
     totalTokensOutput,
     source: options.source,

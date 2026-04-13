@@ -4,7 +4,8 @@ function formatScore(score: number): string {
   return score.toFixed(2);
 }
 
-function passFailBadge(passed: boolean): string {
+function passFailBadge(passed: boolean, skipped?: boolean): string {
+  if (skipped) return '⚠️ SKIPPED';
   return passed ? '✅ PASS' : '❌ FAIL';
 }
 
@@ -17,15 +18,17 @@ export function generatePRComment(results: EvaluationResult[]): string {
     return '## 🤖 Evaluation Results\n\nNo evaluations were run.';
   }
 
-  const allPassed = results.every((r) => r.passed);
+  const allPassed = results.every((r) => r.passed || r.skipped);
+  const skippedEntries = results.filter((r) => r.skipped).length;
   const overallBadge = allPassed ? '✅ All evaluations passed' : '❌ Some evaluations failed';
   const totalEntries = results.length;
   const passedEntries = results.filter((r) => r.passed).length;
+  const skippedNote = skippedEntries > 0 ? ` (${skippedEntries} skipped due to API errors — not counted)` : '';
 
   const lines: string[] = [
     '## 🤖 Evaluation Results',
     '',
-    `**${overallBadge}** — ${passedEntries}/${totalEntries} assets passed`,
+    `**${overallBadge}** — ${passedEntries}/${totalEntries - skippedEntries} assets passed${skippedNote}`,
     '',
     '| Asset | Kind | Score | Pass Rate | Status |',
     '|-------|------|-------|-----------|--------|',
@@ -33,7 +36,7 @@ export function generatePRComment(results: EvaluationResult[]): string {
 
   for (const result of results) {
     lines.push(
-      `| \`${result.name}\` | ${result.kind} | ${formatScore(result.overallScore)}/10 | ${formatPassRate(result.passRate)} | ${passFailBadge(result.passed)} |`,
+      `| \`${result.name}\` | ${result.kind} | ${result.skipped ? 'N/A' : `${formatScore(result.overallScore)}/10`} | ${result.skipped ? 'N/A' : formatPassRate(result.passRate)} | ${passFailBadge(result.passed, result.skipped)} |`,
     );
   }
 
@@ -41,7 +44,13 @@ export function generatePRComment(results: EvaluationResult[]): string {
 
   for (const result of results) {
     lines.push(`<details>`);
-    lines.push(`<summary><strong>${result.name}</strong> (${result.kind}) — ${passFailBadge(result.passed)}</summary>`, '');
+    lines.push(`<summary><strong>${result.name}</strong> (${result.kind}) — ${passFailBadge(result.passed, result.skipped)}</summary>`, '');
+
+    if (result.skipped) {
+      lines.push(`> ⚠️ All runs failed due to API errors — evaluation was skipped and is not counted in the benchmark.`, '');
+      lines.push(`</details>`, '');
+      continue;
+    }
     lines.push(`**Model:** \`${result.model}\``);
     lines.push(`**Overall Score:** ${formatScore(result.overallScore)}/10`);
     lines.push(`**Pass Rate:** ${formatPassRate(result.passRate)}`, '');
@@ -52,7 +61,11 @@ export function generatePRComment(results: EvaluationResult[]): string {
       lines.push(`| Run | Score | Passed |`);
       lines.push(`|-----|-------|--------|`);
       for (const run of scenario.runs) {
-        lines.push(`| ${run.run} | ${formatScore(run.score)}/10 | ${run.passed ? '✅' : '❌'} |`);
+        if (run.error) {
+          lines.push(`| ${run.run} | ⚠️ error | ⚠️ |`);
+        } else {
+          lines.push(`| ${run.run} | ${formatScore(run.score)}/10 | ${run.passed ? '✅' : '❌'} |`);
+        }
       }
       if (scenario.runs.some((r) => r.keywordsMissing.length > 0)) {
         const missing = [...new Set(scenario.runs.flatMap((r) => r.keywordsMissing))];
