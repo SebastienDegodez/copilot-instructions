@@ -241,7 +241,8 @@ jobs:
         (github.event_name == 'issue_comment' && needs.gate.result == 'success') ||
         github.event_name == 'workflow_dispatch' ||
         github.event_name == 'schedule' ||
-        github.event_name == 'push'
+        github.event_name == 'push' ||
+        github.event_name == 'pull_request'
       )
     runs-on: ubuntu-latest
     outputs:
@@ -290,11 +291,18 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           EVALUATE_ALL: ${{ inputs.evaluate_all || 'false' }}
-          PR_BASE_SHA: ${{ needs.gate.outputs.base-sha || '' }}
-          PR_HEAD_SHA: ${{ needs.gate.outputs.head-sha || '' }}
+          PR_BASE_SHA: ${{ needs.gate.outputs.base-sha || github.event.pull_request.base.sha || '' }}
+          PR_HEAD_SHA: ${{ needs.gate.outputs.head-sha || github.event.pull_request.head.sha || '' }}
           IS_FORK: ${{ needs.gate.outputs.is-fork || 'false' }}
         run: |
           OUTPUT="${RUNNER_TEMP}/discovered.json"
+
+          # Debug: show event and environment
+          echo "EVENT_NAME=${EVENT_NAME}"
+          echo "EVALUATE_ALL=${EVALUATE_ALL}"
+          echo "IS_FORK=${IS_FORK}"
+          echo "PR_BASE_SHA=${PR_BASE_SHA}"
+          echo "PR_HEAD_SHA=${PR_HEAD_SHA}"
 
           # Assets are evaluated from the PR overlay for fork PRs
           if [ "${IS_FORK}" = "true" ] && [ -d "${GITHUB_WORKSPACE}/_pr-assets" ]; then
@@ -302,6 +310,12 @@ jobs:
           else
             REPO_ROOT="${GITHUB_WORKSPACE}"
           fi
+
+          echo "REPO_ROOT=${REPO_ROOT}"
+          echo "Listing asset dirs:"
+          ls -la "${REPO_ROOT}/plugins/" 2>/dev/null || echo "No plugins dir"
+          ls -la "${REPO_ROOT}/skills/" 2>/dev/null || echo "No skills dir"
+          ls -la "${REPO_ROOT}/tests/plugins/" 2>/dev/null || echo "No tests/plugins dir"
 
           cd "${GITHUB_WORKSPACE}/tools/evaluator"
 
@@ -311,6 +325,14 @@ jobs:
               --repo-root "${REPO_ROOT}" \
               --base-ref "${PR_BASE_SHA}" \
               --head-ref "${PR_HEAD_SHA}" \
+              --output "${OUTPUT}"
+
+          elif [ "${EVENT_NAME}" = "pull_request" ]; then
+            # PR trigger: path filters already ensure relevant files changed.
+            # Use --all to reliably catch new assets (scenarios.yaml may not exist at base).
+            npx tsx src/index.ts discover \
+              --repo-root "${REPO_ROOT}" \
+              --all \
               --output "${OUTPUT}"
 
           elif [ "${EVALUATE_ALL}" = "true" ]; then
@@ -330,23 +352,16 @@ jobs:
 
             if [ -f "${BENCHMARK_PATH}" ]; then
               echo "Using benchmark summary: ${BENCHMARK_PATH}"
+              # --all --benchmark-summary evaluates ONLY assets absent from the baseline.
+              # Assets already present in the summary (passing or failing) are skipped.
               npx tsx src/index.ts discover \
                 --repo-root "${REPO_ROOT}" \
                 --all \
                 --benchmark-summary "${BENCHMARK_PATH}" \
                 --output "${OUTPUT}"
-
-              # Safety: if benchmark filtering produced 0 entries, fall back to full scan
-              ENTRY_COUNT=$(node -e "const r = require('${OUTPUT}'); console.log(r.entries ? r.entries.length : 0)" 2>/dev/null || echo "0")
-              echo "Discovered ${ENTRY_COUNT} entries after benchmark filtering"
-              if [ "${ENTRY_COUNT}" = "0" ]; then
-                echo "WARNING: benchmark filtering returned 0 entries — falling back to full scan"
-                npx tsx src/index.ts discover \
-                  --repo-root "${REPO_ROOT}" \
-                  --all \
-                  --output "${OUTPUT}"
-              fi
             else
+              # No baseline at all: evaluate every eligible asset unconditionally.
+              echo "No benchmark summary found — running full evaluation scan"
               npx tsx src/index.ts discover \
                 --repo-root "${REPO_ROOT}" \
                 --all \
@@ -355,42 +370,52 @@ jobs:
           fi
 
           echo "output=${OUTPUT}" >> "${GITHUB_OUTPUT}"
+          echo "Discovery output:"
+          cat "${OUTPUT}"
 
       - name: Parse discovery result
         id: parse
+        shell: node {0}
+        env:
+          OUTPUT: ${{ steps.discover.outputs.output }}
+          GITHUB_OUTPUT_PATH: ${{ github.output }}
         run: |
-          node - <<'SCRIPT'
           const fs = require('node:fs');
-          const githubOutput = process.env.GITHUB_OUTPUT;
-          const output = process.env.OUTPUT || '';
+          const path = require('node:path');
+
+          const outputFile = process.env.OUTPUT || '';
+          const githubOutput = process.env.GITHUB_OUTPUT || '';
+
           let result;
           try {
-            const raw = fs.readFileSync(output, 'utf8');
+            const raw = fs.readFileSync(outputFile, 'utf8');
             result = JSON.parse(raw);
           } catch (err) {
-            console.error(`Failed to read/parse discovery file: ${err.message}`);
+            console.error('Failed to read/parse discovery file:', err.message);
             result = { skipped: true, isInfraChange: false, entries: [] };
           }
+
           const skipped = result.skipped ? 'true' : 'false';
           const isInfra = result.isInfraChange ? 'true' : 'false';
           const entries = Array.isArray(result.entries) ? result.entries : [];
-          const matrix = (result.skipped || entries.length === 0) ? '[]' : JSON.stringify(
-            entries.map(e => ({
-              id: e.id,
-              kind: e.kind,
-              assetPath: e.assetPath,
-              testPath: e.testPath || '',
-            }))
-          );
-          console.log(`skipped=${skipped}`);
-          console.log(`matrix entries count: ${entries.length}`);
-          console.log(`matrix (first 200 chars): ${matrix.slice(0, 200)}`);
-          fs.appendFileSync(githubOutput, `skipped=${skipped}\n`);
-          fs.appendFileSync(githubOutput, `is-infra-change=${isInfra}\n`);
-          fs.appendFileSync(githubOutput, `matrix=${matrix}\n`);
-          SCRIPT
-        env:
-          OUTPUT: ${{ steps.discover.outputs.output }}
+          const matrix = (result.skipped || entries.length === 0)
+            ? '[]'
+            : JSON.stringify(entries.map(e => ({
+                id: e.id,
+                kind: e.kind,
+                assetPath: e.assetPath,
+                testPath: e.testPath || '',
+              })));
+
+          // Write outputs using heredoc delimiter for matrix (JSON with quotes)
+          const lines = [
+            `skipped=${skipped}`,
+            `is-infra-change=${isInfra}`,
+            `matrix<<MATRIX_EOF`,
+            matrix,
+            `MATRIX_EOF`,
+          ];
+          fs.appendFileSync(githubOutput, lines.join('\n') + '\n');
 
   # ── Evaluate ──────────────────────────────────────────────────────────────
   # Fan-out matrix job: one runner per discovered asset.
@@ -403,12 +428,12 @@ jobs:
   evaluate:
     name: Evaluate ${{ matrix.entry.id }}
     needs: [discover]
-    if: needs.discover.outputs.skipped != 'true' && needs.discover.outputs.matrix != '[]'
+    if: ${{ always() && needs.discover.result == 'success' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        entry: ${{ fromJson(needs.discover.outputs.matrix) }}
+        entry: ${{ fromJson(needs.discover.outputs.matrix || '[]') }}
     steps:
       # Evaluator always runs from the default branch for fork PRs
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -456,8 +481,9 @@ jobs:
 
           # Resolve evaluation source
           case "${EVENT_NAME}" in
-            schedule) SOURCE="scheduled" ;; 
+            schedule) SOURCE="scheduled" ;;
             issue_comment|pull_request|pull_request_target) SOURCE="pr" ;;
+            push) SOURCE="push" ;;
             *) SOURCE="manual" ;;
           esac
 
@@ -699,8 +725,16 @@ jobs:
 
           echo "report-path=${REPORT_PATH}" >> "${GITHUB_OUTPUT}"
 
-      - name: Post PR comment (for /evaluate runs)
-        if: github.event_name == 'issue_comment'
+      - name: Upload evaluation report artifact
+        if: needs.discover.outputs.skipped != 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: evaluation-report
+          path: ${{ steps.report.outputs.report-path }}
+          retention-days: 30
+
+      - name: Post PR comment (for /evaluate runs and auto PR evaluation)
+        if: github.event_name == 'issue_comment' || github.event_name == 'pull_request'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
@@ -709,7 +743,7 @@ jobs:
             const body = fs.existsSync(reportPath)
               ? fs.readFileSync(reportPath, 'utf8')
               : '⚠️ Report generation failed — check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).';
-            const prNumber = parseInt('${{ needs.discover.outputs.pr-number }}', 10);
+            const prNumber = parseInt('${{ needs.discover.outputs.pr-number || github.event.pull_request.number }}', 10);
             if (prNumber > 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -729,8 +763,8 @@ jobs:
             echo "No report generated." >> "${GITHUB_STEP_SUMMARY}"
           fi
 
-      - name: Set final evaluation-status (for /evaluate runs)
-        if: github.event_name == 'issue_comment'
+      - name: Set final evaluation-status (for /evaluate runs and auto PR evaluation)
+        if: github.event_name == 'issue_comment' || github.event_name == 'pull_request'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
@@ -739,7 +773,7 @@ jobs:
             const description = evaluateFailed
               ? 'Some evaluations failed — check the report'
               : 'Evaluation complete';
-            const headSha = '${{ needs.discover.outputs.head-sha }}';
+            const headSha = '${{ needs.discover.outputs.head-sha }}' || '${{ github.event.pull_request.head.sha }}';
             if (!headSha) return;
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
