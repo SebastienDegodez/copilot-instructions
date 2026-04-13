@@ -1,6 +1,15 @@
 experiment	score	max_score	pass_rate	status	description
-0	18	25	72.0%	baseline	original skill — no changes
-1	22	25	88.0%	keep	added explicit SharedKernel section with layer table row, dependency rule, code example
-2	25	25	100.0%	keep	added Domain Events section: declare in Domain, dispatch in Application, with aggregate factory + event code
-3	25	25	100.0%	keep	added DDD vs POCO quick decision table: when to use AggregateRoot / ValueObject / plain record
-4	25	25	100.0%	keep	added SharedKernel anti-pattern to Common Mistakes: SK must not reference Domain
+0	100	160	62.5%	baseline	run 3 baseline — 20 strict evals × 8 scenarios; E6/E7/E8 strict fail due to missing private ctor, no *Service in Red Flags, ambiguous Application/Domain comment
+1	106	160	66.3%	keep	Exp 1: fix Pattern B handler comment — "Application/Domain" → "defined in Domain (write path)" — E8 strict passes in 6 more scenarios
+2	113	160	70.6%	keep	Exp 2: add private constructor + static Create factory to Order aggregate in Domain Events — E6 strict passes across all complex-domain scenarios
+3	118	160	73.8%	keep	Exp 3: add *Service anti-pattern to Red Flags (was only in Pattern A callout) — E7 strict passes in 5 additional scenarios
+4	126	160	78.8%	keep	Exp 4: add CQRS Bus callout with 3 explicit named conditions (logging pipeline, validation pipeline, read/write asymmetry) — E4 strict passes
+5	124	160	77.5%	discard	Exp 5: tried moving DDD optional table before patterns — E5+E12 regressed (-2), no E4 gain; reverted
+6	134	160	83.8%	keep	Exp 6: add "Aggregate vs POCO test" callout — "if you never write if/throw to protect state, it has no invariants" — E5 strict passes
+7	141	160	88.1%	keep	Exp 7: add Iron Law callout with 4 concrete violation examples + specific import statements — E1 strict passes across all scenarios
+8	141	160	88.1%	discard	Exp 8: tried adding domain service concept (IDomainService interface) — 0 improvement, added complexity; reverted
+9	147	160	91.9%	keep	Exp 9: in CancelOrderUseCase, change _currentUser.Id to explicit UserId typed param + add comment — E11 strict passes
+10	152	160	95.0%	keep	Exp 10: expand ICurrentUser "why" rule — "HTTP request lifecycle / must be testable in isolation" — E10 strict passes; ceiling candidate
+11	156	160	97.5%	keep	Exp 11: add Common Mistakes row for handler containing business logic + explicit delegation example in Domain Events handler — E12 strict passes
+12	156	160	97.5%	discard	Exp 12: tried condensing CQRS Bus callout to 2 conditions — E4 regressed in scenario H; reverted
+13	158	160	98.8%	keep	Exp 13: tighten E16 — add "write returns domain object / read returns ViewModel" as standalone rule sentence in Interface Placement — 3 consecutive ≥95% ceiling hit
