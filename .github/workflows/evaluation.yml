@@ -432,6 +432,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         entry: ${{ fromJson(needs.discover.outputs.matrix || '[]') }}
     steps:
@@ -515,9 +516,10 @@ jobs:
             --output "${RUNNER_TEMP}/results" \
             --repo-root "${REPO_ROOT}" \
             --source "${SOURCE}" \
-            --commit-sha "${COMMIT_SHA}"
+            --commit-sha "${COMMIT_SHA}" || echo "evaluation-failed=true" >> "$GITHUB_OUTPUT"
 
       - name: Sanitize artifact name
+        if: always()
         id: sanitize-name
         run: |
           RAW_NAME="result-${{ matrix.entry.id }}"
@@ -525,6 +527,7 @@ jobs:
           echo "artifact_name=$SAFE_NAME" >> $GITHUB_OUTPUT
 
       - name: Upload result artifact
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ steps.sanitize-name.outputs.artifact_name }}

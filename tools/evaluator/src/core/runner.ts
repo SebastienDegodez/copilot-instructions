@@ -50,7 +50,12 @@ export async function runEvaluation(
   const scenariosFile = ScenariosFileSchema.parse(rawData);
 
   const scenarioResults: ScenarioResult[] = [];
-  for (const scenario of scenariosFile.scenarios) {
+  for (let i = 0; i < scenariosFile.scenarios.length; i++) {
+    const scenario = scenariosFile.scenarios[i]!;
+    // Pace requests to avoid per-minute rate limits (10 req/60s)
+    if (i > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
     const result = await judgeScenario(llmClient, scenario);
     scenarioResults.push(result);
   }
