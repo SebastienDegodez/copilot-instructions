@@ -1,129 +1,125 @@
 ---
 name: red-synthesize-green
-description: Use when writing any test-first feature or bug fix, to enforce the AI-assisted 2-step TDD cycle where a human validates the failing test before AI synthesizes the implementation
+description: Use when implementing any feature or fix using TDD, before writing any implementation code
 ---
 
-# Red–Synthesize–Green
+# RED → SYNTHESIZE GREEN (AI TDD Cycle)
 
 ## Overview
 
-The 2-step AI TDD cycle that preserves the red phase when an AI is writing both tests and implementation.
+2-step cycle replacing traditional 3-step TDD. Optimized for AI synthesis.
 
-**Core rule:** AI writes the test and stubs only. Human validates the failure reason. AI synthesizes implementation after approval.
+- **Traditional (3 steps):** RED → green (dirty) → Refactor
+- **AI-Optimized (2 steps):** RED (behavior failure) → SYNTHESIZE GREEN (clean synthesis)
 
-## The Problem This Solves
+Architectural guidance is **mandatory** between steps.
 
-In traditional TDD, the developer writes a failing test and then makes it pass. With AI assistance, the AI can accidentally write a passing test from the start — because it already "knows" the implementation while writing the test. This bypasses the red phase entirely, removing TDD's core safety signal.
+**Hard rule:** No implementation code before RED is a clean behavior failure.
 
-`red-synthesize-green` enforces a hard separation between test authoring (with stubs) and implementation synthesis, with a mandatory human validation gate in between.
+## Step 1: RED (Behavior Failure Only)
 
-## The 2-Step Cycle
+Write the failing test. Run it.
 
-### Step 1: RED — Write the Test and Stubs Only
+- Compilation errors = **wishful thinking phase** → implement stubs/empty returns to compile, rerun
+- Assertion/behavior failure = **RED** ✓ → proceed to Step 2
+- Never treat compilation errors as RED
 
-1. **Write the test** — express the expected behavior with no implementation details
-2. **Stub to compile** — create minimal stubs for missing types and methods: empty classes, `throw new NotImplementedException()`, `return default`
-3. **Run the test** — it must fail with a **behavior failure**, not a compilation error
-4. **WAIT** — present the failure output to the human and ask for approval before proceeding
+**Programming by Wishful Thinking:** When your test won't compile, you're discovering the API you need. Stub just enough to compile, then confirm the test fails on behavior.
 
-**Hard rules for Step 1:**
-- Stubs must contain NO real logic. `throw new NotImplementedException()` only.
-- Do NOT implement any business rule, condition, or computation during stubbing.
-- Do NOT proceed to Step 2 until the human explicitly approves the red state.
+## Between Steps: Architectural Guidance (MANDATORY)
 
-**Failure output to present:**
-```
-Test: WhenCondition_ShouldOutcome
-Status: FAILED ✗
-Reason: <paste actual failure message>
+**Hard rule:** This step is not skippable. Do not proceed to SYNTHESIZE GREEN without completing it.
 
-→ Awaiting approval to synthesize implementation.
-```
+**Developer must review and explicitly validate the test before continuing.**
+AI pauses here and waits for developer confirmation that the test correctly captures the intended behavior.
 
-### Step 2: SYNTHESIZE GREEN — Implement After Approval
+Orient design before synthesis:
 
-1. **After human approval** — replace stubs with real implementation
-2. **Run the test** — it must pass (GREEN)
-3. **Do not modify the test** — only the implementation changes between Step 1 and Step 2
+- Which pattern? (specification, factory, builder)
+- Which layer owns the logic?
+- Immutability, return values vs mutations?
 
-**Hard rules for Step 2:**
-- The test written in Step 1 must not be changed to make it pass.
-- Only the implementation (stubs) changes.
-- If the test needs to change, go back to Step 1 with the revised test.
+## Step 2: SYNTHESIZE GREEN (Clean Synthesis)
 
-## Example
+Implement complete, clean, production-ready solution in one shot.
 
-### Step 1: RED
+- Follows all architectural rules and coding standards
+- No dirty-then-refactor — synthesize properly from the start
+- Idiomatic code, domain semantics, SOLID principles
+- If test was misunderstood → revise test, restart from RED
 
-Test written:
-```csharp
-[Fact]
-public void WhenDriverIsUnderMinimumAge_ShouldBeRejected()
-{
-    var policy = new EligibilityPolicy();
-    var driver = new DriverInfo(Age: 17, LicenseYears: 0);
-    var vehicle = new VehicleInfo(Type: "sedan", Age: 1);
+**No iteration after SYNTHESIZE GREEN** unless RED was wrong or architectural guidance changed.
 
-    var result = policy.Evaluate(driver, vehicle);
+## Common Rationalizations
 
-    Assert.False(result.IsEligible);
-    Assert.Equal("minimum_age_not_met", result.RejectionReason);
-}
-```
+| Excuse | Reality |
+|---|---|
+| "Compilation error IS red" | No. Compilation = wishful thinking. RED = behavior failure. |
+| "I'll write dirty code then refactor" | That's 3-step TDD. SYNTHESIZE GREEN produces clean code. |
+| "I can skip RED, I know it'll fail" | Run it. RED proves your test catches real failures. |
 
-Stubs created:
-```csharp
-public sealed class EligibilityPolicy
-{
-    public EligibilityResult Evaluate(DriverInfo driver, VehicleInfo vehicle)
-        => throw new NotImplementedException();
-}
+## Red Flags — STOP and Restart
 
-public record DriverInfo(int Age, int LicenseYears);
-public record VehicleInfo(string Type, int Age);
-public record EligibilityResult(bool IsEligible, string RejectionReason);
-```
+- Implementation code before RED is a behavior failure
+- Compilation errors treated as RED
+- Skipping RED entirely
+- Skipping the Between Steps architectural guidance
+- Proceeding to SYNTHESIZE GREEN without developer test validation
+- Refining code after SYNTHESIZE GREEN instead of revising RED
 
-Test output presented to human:
-```
-Test: WhenDriverIsUnderMinimumAge_ShouldBeRejected
-Status: FAILED ✗
-Reason: System.NotImplementedException: The method or operation is not implemented.
+**Any of these mean:** Delete code, start over with proper RED.
 
-→ Awaiting approval to synthesize implementation.
-```
+## Quick Reference
 
-### Step 2: SYNTHESIZE GREEN (after approval)
+| Phase | What | Success Criteria |
+|---|---|---|
+| **RED** | Write test, stub until compiles, run | Test fails on **behavior** (assertion), not compilation |
+| **Guidance** (**MANDATORY**) | Orient architectural approach + **developer validates test** | Design direction clear, developer has confirmed test |
+| **SYNTHESIZE GREEN** | Synthesize complete clean solution | Tests green, architecture respected, production-ready |
 
-```csharp
-public sealed class EligibilityPolicy
-{
-    private const int MinimumAge = 18;
+## When Orchestrating Subagents (MANDATORY)
 
-    public EligibilityResult Evaluate(DriverInfo driver, VehicleInfo vehicle)
-    {
-        if (driver.Age < MinimumAge)
-            return new EligibilityResult(IsEligible: false, RejectionReason: "minimum_age_not_met");
+If you are an orchestrating agent using `subagent-driven-development`:
 
-        return new EligibilityResult(IsEligible: true, RejectionReason: string.Empty);
-    }
-}
-```
+**NEVER put RED and SYNTHESIZE GREEN in the same subagent prompt.**
 
-Test result: PASSED ✓
+Split every TDD task into **two separate dispatches**:
 
-## Common Mistakes
+1. **Dispatch 1 — RED only:** subagent writes test, stubs to compile, runs to confirm behavior failure, reports the failing test output
+2. **YOU pause** — show the failing test to the developer, wait for explicit confirmation ("ok, proceed")
+3. **Dispatch 2 — SYNTHESIZE GREEN:** only after developer approves the test
 
-| Mistake | Fix |
-|---------|-----|
-| Implementing logic in stubs | Stubs are `throw new NotImplementedException()` only |
-| Proceeding to Step 2 without approval | Present the red output and wait for explicit "ok" |
-| Modifying the test in Step 2 to make it pass | The test is fixed after Step 1 — only implementation changes |
-| Treating compilation errors as behavioral failures | Stub to compile first, then confirm the test fails for a behavioral reason |
-| Skipping the cycle for "trivial" features | Every test-first feature uses this cycle, regardless of size |
+The mandatory human validation checkpoint is the **orchestrator's responsibility**. It cannot be delegated to the subagent.
+
+**Red flags — you are violating this rule if:**
+- Your subagent prompt contains both "write the failing test" AND "implement the solution"
+- You wrote `PAUSE` in a plan comment but included all steps in one prompt
+- You assumed the developer would confirm via the plan document
+
+| Rationalization | Reality |
+|---|---|
+| "The pause is in the plan text" | Plans are documentation. Dispatch boundaries are enforcement. |
+| "The subagent will stop and ask" | Subagents execute what they receive. Split the prompt. |
+| "It's more efficient in one shot" | Efficiency that skips developer validation is not efficiency. |
 
 ## Integration
 
-**REQUIRED BACKGROUND:** `superpowers-whetstone:gherkin-gate` — scenarios approved before this cycle applies
-**REQUIRED SUB-SKILL:** `superpowers-whetstone:outside-in-tdd` — uses this cycle to drive implementation from outside in
-**REQUIRED SUB-SKILL:** `superpowers-whetstone:mutation-testing` — validates the tests produced by this cycle
+**REQUIRED BACKGROUND:** `superpowers-whetstone:outside-in-tdd` — defines the two test streams (Application + Domain) that this cycle drives.
+
+## Quality Gate Ownership
+
+This skill owns the strict TDD quality gate for business logic layers:
+
+1. Application and Domain logic must reach **100% code coverage** before completion.
+2. Mutation testing on Application and Domain logic must end with **0 non-equivalent surviving mutants**.
+3. Any equivalent mutant must be explicitly documented with justification.
+
+If one of these conditions is not met, work is not complete.
+
+**Behavior-first workflow:** When used with `superpowers-whetstone:outside-in-tdd`:
+1. `superpowers-whetstone:gherkin-gate` defines WHAT (observable behavior)
+2. Acceptance tests map scenarios to executable tests (RED phase)
+3. This skill enforces the RED → validation → SYNTHESIZE GREEN cycle
+4. `superpowers-whetstone:mutation-testing` validates test quality after GREEN (before merge)
+
+Pair with domain-specific testing skills for patterns and examples.
