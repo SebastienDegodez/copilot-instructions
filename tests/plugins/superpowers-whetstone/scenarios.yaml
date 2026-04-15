@@ -27,3 +27,30 @@ scenarios:
       passing_score: 7.0
     timeout: 90
     runs: 2
+
+  - name: red-synthesize-green-cycle
+    description: Enforce the 2-step AI TDD cycle with stub-first and synthesis separation
+    prompt: |
+      Using the superpowers-whetstone red-synthesize-green skill, demonstrate the
+      2-step AI TDD cycle for a "DiscountPolicy" that applies a 10% discount when
+      the order total exceeds 100:
+      1. Write a failing test with stubs only (Step 1: RED)
+      2. Show the test failure output and wait for approval
+      3. Synthesize the real implementation (Step 2: SYNTHESIZE GREEN)
+      4. Show the test passing
+    expectations:
+      keywords:
+        - "NotImplementedException"
+        - "FAILED"
+        - "Awaiting approval"
+        - "Assert"
+    judge:
+      criteria: |
+        Score on:
+        - Step 1 compliance: Are stubs minimal (throw NotImplementedException only, no real logic)?
+        - Red validation: Is the failure output presented and approval requested before implementing?
+        - Step 2 compliance: Is the test unchanged between Step 1 and Step 2?
+        - Green confirmation: Does the implementation make the test pass without modifying the test?
+      passing_score: 7.0
+    timeout: 90
+    runs: 2
