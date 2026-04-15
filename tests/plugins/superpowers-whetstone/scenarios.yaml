@@ -1,6 +1,224 @@
 kind: plugin
 ref: plugins/superpowers-whetstone
 scenarios:
+  # ── gherkin-gate ─────────────────────────────────────────────────────────────
+
+  - name: gherkin-gate-basic
+    description: Write business-language Gherkin scenarios for a new domain feature and wait for approval
+    prompt: |
+      Using the superpowers-whetstone gherkin-gate skill, capture the observable
+      behavior for a "LoanEligibility" feature: an applicant is eligible for a loan
+      when their credit score is at least 650 and their monthly income covers at
+      least 3x the monthly repayment. Write Gherkin scenarios covering the main
+      success path and at least one rejection edge case, then present them labeled
+      "Gherkin Scenarios — awaiting approval" and wait.
+    expectations:
+      keywords:
+        - "Given"
+        - "When"
+        - "Then"
+        - "awaiting approval"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Do all scenarios use only business language (no class names, HTTP codes, or method names)?
+        2. Is there at least one happy-path scenario AND one rejection scenario?
+        3. Are the scenarios presented with the exact label "Gherkin Scenarios — awaiting approval"?
+        4. Does the response pause and wait for approval rather than immediately proceeding to code?
+      passing_score: 7.0
+    timeout: 90
+    runs: 3
+
+  - name: gherkin-gate-spec-leakage
+    description: Reject scenarios that leak implementation details (class names, HTTP codes, DB terms)
+    prompt: |
+      Using the superpowers-whetstone gherkin-gate skill, review and correct the
+      following bad Gherkin scenario that leaks implementation details:
+
+      GIVEN the EligibilityPolicy has an empty rules list.
+      WHEN I call POST /api/eligibility with userId=42.
+      THEN the EligibilityHandler returns HTTP 200 and saves a record to the
+      eligibility_results table.
+
+      Rewrite it using only observable business behavior with no spec-leakage.
+    expectations:
+      keywords:
+        - "Given"
+        - "When"
+        - "Then"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Is the rewritten scenario completely free of class names (EligibilityPolicy, EligibilityHandler)?
+        2. Is the rewritten scenario free of HTTP endpoints and status codes?
+        3. Is the rewritten scenario free of database/table references?
+        4. Does the rewritten scenario still describe the same observable business outcome?
+      passing_score: 7.0
+    timeout: 60
+    runs: 3
+
+  - name: gherkin-gate-approval-gate
+    description: Validate the mandatory approval gate — no code until user says ok
+    prompt: |
+      Using the superpowers-whetstone gherkin-gate skill, write a Gherkin scenario
+      for a "PasswordReset" feature where a user receives a reset link by email.
+      After presenting the scenario, the user says nothing (silence). Describe what
+      you do next and why.
+    expectations:
+      keywords:
+        - "Given"
+        - "When"
+        - "Then"
+        - "approval"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the response present the scenario labeled "Gherkin Scenarios — awaiting approval"?
+        2. Does the response explicitly state it will NOT proceed to code without explicit approval?
+        3. Does the response treat silence as non-approval (does not proceed)?
+        4. Is the Gherkin scenario itself free of implementation details?
+      passing_score: 7.0
+    timeout: 60
+    runs: 3
+
+  - name: gherkin-gate-edge-case-expansion
+    description: Add edge-case scenarios after the happy path is approved
+    prompt: |
+      Using the superpowers-whetstone gherkin-gate skill, a happy-path scenario for
+      "VehicleRegistration" has already been approved: a vehicle with a valid
+      inspection certificate is successfully registered. Now identify and write
+      2 relevant edge-case scenarios (e.g., expired certificate, duplicate plate)
+      and present them for approval.
+    expectations:
+      keywords:
+        - "Given"
+        - "When"
+        - "Then"
+        - "awaiting approval"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Are there exactly 2 new edge-case scenarios presented?
+        2. Do both edge-case scenarios use only business language (no implementation details)?
+        3. Are the edge cases distinct from the happy path (different failure modes)?
+        4. Are the new scenarios presented with an approval label before proceeding?
+      passing_score: 7.0
+    timeout: 60
+    runs: 3
+
+  # ── red-synthesize-green ─────────────────────────────────────────────────────
+
+  - name: red-synthesize-green-cycle
+    description: Enforce the 2-step AI TDD cycle with stub-first and synthesis separation
+    prompt: |
+      Using the superpowers-whetstone red-synthesize-green skill, demonstrate the
+      2-step AI TDD cycle for a "DiscountPolicy" that applies a 10% discount when
+      the order total exceeds 100:
+      1. Write a failing test with stubs only (Step 1: RED)
+      2. Show the test failure output and wait for approval
+      3. Synthesize the real implementation (Step 2: SYNTHESIZE GREEN)
+      4. Show the test passing
+    expectations:
+      keywords:
+        - "NotImplementedException"
+        - "FAILED"
+        - "Awaiting approval"
+        - "Assert"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Are stubs minimal — throw NotImplementedException only, with no real logic?
+        2. Is the failure output presented and approval explicitly requested before implementing?
+        3. Is the test body unchanged between Step 1 and Step 2?
+        4. Does the synthesized implementation make the test pass without modifying the test?
+      passing_score: 7.0
+    timeout: 90
+    runs: 3
+
+  - name: red-synthesize-green-wishful-thinking
+    description: Handle the wishful-thinking phase when test won't compile — stub to compile then confirm RED
+    prompt: |
+      Using the superpowers-whetstone red-synthesize-green skill, demonstrate the
+      "Programming by Wishful Thinking" phase. Write a test for a
+      "ShippingCostCalculator" that does not yet exist. The test references types
+      that don't compile yet. Show: (1) the compilation error, (2) adding the
+      minimum stubs to compile (throw NotImplementedException only), (3) running the
+      test to confirm a behavioral failure — NOT a compilation error — then present
+      the output and await approval.
+    expectations:
+      keywords:
+        - "NotImplementedException"
+        - "FAILED"
+        - "compilation"
+        - "Awaiting approval"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the response distinguish between a compilation error and a behavioral (RED) failure?
+        2. Are the stubs created purely to compile — throw NotImplementedException, no logic?
+        3. Does the response confirm the test fails on behavior (not compilation) before pausing?
+        4. Is approval explicitly requested after presenting the behavioral failure output?
+      passing_score: 7.0
+    timeout: 90
+    runs: 3
+
+  - name: red-synthesize-green-no-logic-in-stubs
+    description: Reject stubs that contain real business logic before the RED approval
+    prompt: |
+      Using the superpowers-whetstone red-synthesize-green skill, identify what is
+      wrong with the following Step 1 stub and explain why it violates the skill:
+
+      public EligibilityResult Evaluate(DriverInfo driver, VehicleInfo vehicle)
+      {
+          if (driver.Age < 18)
+              return new EligibilityResult(IsEligible: false, RejectionReason: "minimum_age_not_met");
+          return new EligibilityResult(IsEligible: true, RejectionReason: string.Empty);
+      }
+
+      Then show the correct stub for Step 1.
+    expectations:
+      keywords:
+        - "NotImplementedException"
+        - "RED"
+        - "logic"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the response correctly identify that the stub contains real business logic?
+        2. Does the response state this violates the RED phase (implementation before approval)?
+        3. Does the corrected stub use only throw NotImplementedException with no conditions?
+        4. Does the response explain that business logic must wait until Step 2 after approval?
+      passing_score: 7.0
+    timeout: 60
+    runs: 3
+
+  - name: red-synthesize-green-architectural-guidance
+    description: Enforce the mandatory Between-Steps architectural guidance gate
+    prompt: |
+      Using the superpowers-whetstone red-synthesize-green skill, you have just
+      reached RED for a "TaxCalculation" feature — the test fails with
+      NotImplementedException. The user says "ok, proceed". Before writing any
+      implementation, what must you do? Walk through the Between Steps: Architectural
+      Guidance phase and explain why it is mandatory and not skippable.
+    expectations:
+      keywords:
+        - "pattern"
+        - "layer"
+        - "SYNTHESIZE GREEN"
+        - "mandatory"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the response identify the Between Steps guidance as a mandatory non-skippable phase?
+        2. Does the response address at least one design question (pattern, layer ownership, or immutability)?
+        3. Does the response require explicit developer validation of the design before proceeding?
+        4. Does the response correctly place the guidance gate BETWEEN RED approval and SYNTHESIZE GREEN?
+      passing_score: 7.0
+    timeout: 60
+    runs: 3
+
+  # ── outside-in-tdd ───────────────────────────────────────────────────────────
+
   - name: outside-in-tdd-workflow
     description: Apply the outside-in TDD workflow to a new feature
     prompt: |
@@ -20,10 +238,163 @@ scenarios:
         - "Assert"
     judge:
       criteria: |
-        Score on:
-        - TDD workflow adherence: Is the outside-in approach properly followed?
-        - Gherkin quality: Are BDD scenarios well-formed and meaningful?
-        - Test quality: Are the tests clear and testing the right behaviors?
+        Binary checks — each is yes or no:
+        1. Is the outside-in approach correctly followed (Gherkin → acceptance test → domain test)?
+        2. Are the Gherkin scenarios well-formed and free of implementation details?
+        3. Does the acceptance test mock only external boundaries (not domain objects)?
+        4. Does the domain test verify business rules with pure state-based assertions (no mocks)?
       passing_score: 7.0
     timeout: 90
-    runs: 2
+    runs: 3
+
+  - name: outside-in-tdd-no-upfront-design
+    description: Validate that domain types emerge from failing tests — no upfront design
+    prompt: |
+      Using the superpowers-whetstone outside-in-tdd skill, a developer starts
+      implementing a "RentalAgreement" feature. Before writing any test, they create
+      the following classes: RentalAgreement, RentalStatus (enum), RentalPolicy.
+      Explain what is wrong with this approach according to the skill, and describe
+      what should have happened instead.
+    expectations:
+      keywords:
+        - "compile"
+        - "RED"
+        - "design"
+        - "emerge"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the response identify upfront class creation as a skill violation?
+        2. Does the response state that domain types must emerge from compilation failures in failing tests?
+        3. Does the response describe the correct order (write test → compilation error → create minimal type)?
+        4. Is the explanation free of advocating for any upfront design or pre-planning of types?
+      passing_score: 7.0
+    timeout: 60
+    runs: 3
+
+  - name: outside-in-tdd-acceptance-test
+    description: Write a correct sociable acceptance test mocking only external boundaries
+    prompt: |
+      Using the superpowers-whetstone outside-in-tdd skill, write an acceptance-style
+      test for a "SubmitInsuranceClaim" use case. The handler loads a policy from
+      IClaimRepository, evaluates eligibility via a ClaimEligibilityPolicy, and
+      saves the result. Mock only the external boundary. Use real domain objects
+      for the policy evaluation.
+    expectations:
+      keywords:
+        - "Fake"
+        - "repository"
+        - "Assert"
+        - "Handler"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Is the repository (external boundary) mocked and the domain policy used as a real object?
+        2. Does the test verify observable behavior (what was saved/published) rather than internal state?
+        3. Is the test structured with clear Arrange / Act / Assert sections?
+        4. Does the test avoid mocking domain objects (ClaimEligibilityPolicy must be real)?
+      passing_score: 7.0
+    timeout: 90
+    runs: 3
+
+  - name: outside-in-tdd-domain-test
+    description: Write a correct pure domain test with no mocks and state-based assertions
+    prompt: |
+      Using the superpowers-whetstone outside-in-tdd skill, write a pure domain test
+      for a "FlightEligibilityPolicy" that rejects passengers under 18 on
+      international flights. The test should verify the rejection reason exactly.
+      No mocks allowed. Use only real domain objects and state-based assertions.
+    expectations:
+      keywords:
+        - "Assert"
+        - "False"
+        - "RejectionReason"
+        - "Policy"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the test contain zero mocks or fakes (pure state-based assertions only)?
+        2. Does the test instantiate a real Policy object and call its Evaluate (or equivalent) method?
+        3. Does the test assert both the rejection flag (IsEligible: false) AND the rejection reason string?
+        4. Is the test name descriptive of the business rule being validated?
+      passing_score: 7.0
+    timeout: 60
+    runs: 3
+
+  # ── mutation-testing ─────────────────────────────────────────────────────────
+
+  - name: mutation-testing-basic
+    description: Run Stryker mutation testing on domain logic and interpret the report
+    prompt: |
+      Using the superpowers-whetstone mutation-testing skill, show how to run
+      Stryker.NET mutation testing on a domain project "Insurance.Domain" with unit
+      tests in "Insurance.UnitTests", targeting only files changed since main.
+      The goal is 100% mutation score on business logic. Show the exact CLI command
+      and explain what each flag does.
+    expectations:
+      keywords:
+        - "dotnet stryker"
+        - "--since:main"
+        - "--break-at"
+        - "mutation"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the response include a complete dotnet stryker CLI command (not just a description)?
+        2. Is the --since:main flag included to target only changed code?
+        3. Is --break-at 100 (or equivalent) included to enforce 100% on business logic?
+        4. Does the response explain what to do with the output (how to interpret surviving mutants)?
+      passing_score: 7.0
+    timeout: 90
+    runs: 3
+
+  - name: mutation-testing-surviving-mutants
+    description: Analyze and kill surviving mutants by writing missing test cases
+    prompt: |
+      Using the superpowers-whetstone mutation-testing skill, Stryker reports one
+      surviving mutant in "PremiumCalculationPolicy.cs" — it changed the boundary
+      condition "age >= 25" to "age > 25" and all tests still passed. Describe the
+      correct process to: (1) classify this mutant, (2) determine if it is
+      equivalent or killable, and (3) write a test to kill it if killable.
+    expectations:
+      keywords:
+        - "boundary"
+        - "equivalent"
+        - "test"
+        - "kill"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the response classify the mutant as killable (boundary condition change is not equivalent)?
+        2. Does the response write a test that exercises the exact boundary value (age = 25)?
+        3. Is the killing test asserting different behavior for 25 vs 24?
+        4. Does the response confirm the mutant must be killed before merge (not accepted as equivalent)?
+      passing_score: 7.0
+    timeout: 90
+    runs: 3
+
+  - name: mutation-testing-equivalent-mutant
+    description: Correctly document an equivalent mutant with justification
+    prompt: |
+      Using the superpowers-whetstone mutation-testing skill, Stryker mutated
+      "return result ?? new EmptyResult()" to "return result ?? null" in a defensive
+      null-guard. After analysis, this mutant is determined to be equivalent — the
+      calling code never passes null so the branch is unreachable in practice.
+      Show how to document this equivalent mutant with full justification so the
+      team can accept it.
+    expectations:
+      keywords:
+        - "equivalent"
+        - "justification"
+        - "unreachable"
+        - "mutant"
+    judge:
+      criteria: |
+        Binary checks — each is yes or no:
+        1. Does the response explicitly label the mutant as "equivalent" (not surviving/unkillable)?
+        2. Does the justification explain WHY the branch is unreachable in business/code terms?
+        3. Does the response include a documentation format (comment, log entry, or stryker config exclusion)?
+        4. Does the response state that equivalent mutants are the ONLY accepted survivors?
+      passing_score: 7.0
+    timeout: 60
+    runs: 3

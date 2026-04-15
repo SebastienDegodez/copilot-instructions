@@ -16,6 +16,7 @@ tags:
   - gherkin
   - behavior-driven-development
 skills:
+  - gherkin-gate
+  - red-synthesize-green
   - outside-in-tdd
   - mutation-testing
-  - gherkin-gate

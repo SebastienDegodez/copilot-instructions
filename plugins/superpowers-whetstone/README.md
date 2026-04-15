@@ -6,6 +6,7 @@ Collection of testing skills for behavior-first development with Outside-In TDD,
 
 ### Skills
 - **gherkin-gate** - Capture observable behavior in business language and require user approval before writing tests or implementation.
+- **red-synthesize-green** - Enforce the 2-step AI TDD cycle: write a failing test with stubs only, validate the red state with a human, then synthesize the real implementation.
 - **outside-in-tdd** - Drive implementation from approved scenarios, start from observable behavior, and let domain design emerge from failing tests.
 - **mutation-testing** - Verify that your test suite actually detects regressions once the baseline is green.
 
@@ -34,8 +35,9 @@ This plugin provides practical guidance on:
 ## Quick Start
 
 1. Start with `gherkin-gate` to write and validate business scenarios.
-2. Continue with `outside-in-tdd` to turn approved scenarios into tests and implementation.
-3. Finish with `mutation-testing` to validate test effectiveness before merge.
+2. Use `red-synthesize-green` to enforce the AI TDD cycle: write a failing test with stubs, validate the red state, then synthesize implementation.
+3. Continue with `outside-in-tdd` to turn approved scenarios into tests and implementation.
+4. Finish with `mutation-testing` to validate test effectiveness before merge.
 
 ## Best Fit
 
