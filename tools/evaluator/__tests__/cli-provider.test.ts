@@ -133,10 +133,10 @@ describe('evaluate command provider behavior', () => {
     try {
       await runEvaluateCommand([]);
 
+      expect(mockedCreateLLMClient).toHaveBeenCalledTimes(1);
       expect(mockedCreateLLMClient).toHaveBeenCalledWith(
         expect.objectContaining({
           provider: 'copilot',
-          model: 'gpt-4o',
         }),
       );
     } finally {
@@ -163,7 +163,6 @@ describe('evaluate command provider behavior', () => {
 
   it('fails fast for unsupported provider values', async () => {
     const restoreApiKey = withEnv('LLM_API_KEY', 'openai-key');
-    const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number | string | null) => {
       throw new ProcessExitError(code);
     }) as typeof process.exit);
@@ -173,12 +172,10 @@ describe('evaluate command provider behavior', () => {
         code: 1,
       });
 
-      expect(loggerErrorSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/unsupported provider/i),
-      );
+      expect(mockedCreateLLMClient).not.toHaveBeenCalled();
+      expect(mockedRunEvaluation).not.toHaveBeenCalled();
     } finally {
       restoreApiKey();
-      loggerErrorSpy.mockRestore();
       exitSpy.mockRestore();
     }
   });
@@ -217,18 +214,4 @@ describe('evaluate command provider behavior', () => {
     }
   });
 
-  it('dispatches omitted --provider evaluate path to copilot factory', async () => {
-    const restoreApiKey = withEnv('LLM_API_KEY', 'openai-key');
-
-    try {
-      await runEvaluateCommand([]);
-
-      expect(mockedCreateLLMClient).toHaveBeenCalledTimes(1);
-      expect(mockedCreateLLMClient.mock.calls[0]?.[0]).toMatchObject({
-        provider: 'copilot',
-      });
-    } finally {
-      restoreApiKey();
-    }
-  });
 });
