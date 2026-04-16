@@ -45,13 +45,14 @@ describe('createLLMClient provider factory', () => {
     expect(result).toBe(openAIClient);
   });
 
-  it('throws provider_unavailable for copilot provider placeholder', () => {
-    expect(() => {
-      createLLMClient({
-        provider: 'copilot',
-        model: 'gpt-4o',
-      });
-    }).toThrowError(/provider_unavailable/);
+  it('dispatches copilot provider to createCopilotClient and returns a client', () => {
+    const result = createLLMClient({
+      provider: 'copilot',
+      model: 'gpt-4o',
+    });
+    expect(result).toBeDefined();
+    expect(typeof result.complete).toBe('function');
+    expect(typeof result.completeWithTools).toBe('function');
   });
 
   it('throws provider_invalid for unsupported provider values', () => {

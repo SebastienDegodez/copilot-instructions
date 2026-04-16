@@ -9,40 +9,59 @@ import type {
 const COPILOT_ADAPTER_MODULE = '../src/adapters/llm/copilot-client.js';
 const COPILOT_SDK_MODULE = '@github/copilot-sdk';
 
-type CopilotCompletion = {
-  assistant?: {
-    content?: string;
-  };
-  usage?: {
-    inputTokens?: number;
-    outputTokens?: number;
-    cacheCreationInputTokens?: number;
-    cacheReadInputTokens?: number;
-    cacheWriteInputTokens?: number;
-  };
+type SDKUsageData = {
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheCreationInputTokens?: number;
+  cacheReadInputTokens?: number;
+  cacheWriteInputTokens?: number;
 };
 
-type CopilotSession = {
-  complete: (prompt: { prompt: string; model: string }) => Promise<CopilotCompletion>;
+type MockSessionOptions = {
+  content?: string;
+  usage?: SDKUsageData;
+  error?: Error;
 };
-
-type CreateCopilotSession = (options: { model: string; workDir?: string; timeoutMs?: number }) => CopilotSession;
 
 async function loadCopilotClientFactory(): Promise<(config: LLMClientConfig) => LLMClient> {
   const module = await import(COPILOT_ADAPTER_MODULE);
   return (module as { createCopilotClient: (config: LLMClientConfig) => LLMClient }).createCopilotClient;
 }
 
-function mockCopilotSdkSession(factory: CreateCopilotSession): void {
+function mockCopilotSdk(opts: MockSessionOptions): void {
   vi.doMock(COPILOT_SDK_MODULE, () => ({
-    createCopilotSession: vi.fn(factory),
+    CopilotClient: vi.fn().mockImplementation(() => ({
+      start: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue([]),
+      createSession: vi.fn().mockImplementation(async () => {
+        const usageHandlers: Array<(event: { data: unknown }) => void> = [];
+        return {
+          sendAndWait: vi.fn(async () => {
+            if (opts.error) throw opts.error;
+            // Emit usage event before returning the assistant message
+            for (const h of usageHandlers) {
+              h({ data: opts.usage ?? {} });
+            }
+            const content = opts.content ?? '';
+            return { type: 'assistant.message', data: { content } };
+          }),
+          on: vi.fn((eventType: string, handler: (event: { data: unknown }) => void) => {
+            if (eventType === 'assistant.usage') {
+              usageHandlers.push(handler);
+            }
+            return () => {};
+          }),
+          disconnect: vi.fn().mockResolvedValue(undefined),
+        };
+      }),
+    })),
+    approveAll: vi.fn(() => ({ kind: 'approved' })),
   }));
 }
 
-async function createClientFromSession(session: CopilotSession): Promise<LLMClient> {
-  mockCopilotSdkSession(() => session);
+async function createClientFromMock(opts: MockSessionOptions): Promise<LLMClient> {
+  mockCopilotSdk(opts);
   const createCopilotClient = await loadCopilotClientFactory();
-
   return createCopilotClient({
     provider: 'copilot',
     model: 'gpt-4.1',
@@ -58,14 +77,9 @@ describe('createCopilotClient contract', () => {
   });
 
   it('maps copilot usage input/output to tokensInput/tokensOutput', async () => {
-    const client = await createClientFromSession({
-      complete: vi.fn(async () => ({
-        assistant: { content: 'Answer from copilot.' },
-        usage: {
-          inputTokens: 123,
-          outputTokens: 45,
-        },
-      })),
+    const client = await createClientFromMock({
+      content: 'Answer from copilot.',
+      usage: { inputTokens: 123, outputTokens: 45 },
     });
 
     await expect(client.complete('Say hello')).resolves.toEqual({
@@ -76,17 +90,15 @@ describe('createCopilotClient contract', () => {
   });
 
   it('ignores cache token fields and persists only input/output totals', async () => {
-    const client = await createClientFromSession({
-      complete: vi.fn(async () => ({
-        assistant: { content: 'Cache-aware response.' },
-        usage: {
-          inputTokens: 200,
-          outputTokens: 30,
-          cacheCreationInputTokens: 999,
-          cacheReadInputTokens: 555,
-          cacheWriteInputTokens: 444,
-        },
-      })),
+    const client = await createClientFromMock({
+      content: 'Cache-aware response.',
+      usage: {
+        inputTokens: 200,
+        outputTokens: 30,
+        cacheCreationInputTokens: 999,
+        cacheReadInputTokens: 555,
+        cacheWriteInputTokens: 444,
+      },
     });
 
     const result = await client.complete('Summarize cache accounting');
@@ -96,38 +108,26 @@ describe('createCopilotClient contract', () => {
   });
 
   it('throws provider_timeout when session idle timeout occurs', async () => {
-    const client = await createClientFromSession({
-      complete: vi.fn(async () => {
-        throw new Error('Session idle timeout exceeded while awaiting assistant response');
-      }),
+    const client = await createClientFromMock({
+      error: new Error('Session idle timeout exceeded while awaiting assistant response'),
     });
 
     await expect(client.complete('Will this timeout?')).rejects.toThrow(/provider_timeout/);
   });
 
   it('throws provider_empty_response when assistant content is empty', async () => {
-    const client = await createClientFromSession({
-      complete: vi.fn(async () => ({
-        assistant: { content: '' },
-        usage: {
-          inputTokens: 70,
-          outputTokens: 12,
-        },
-      })),
+    const client = await createClientFromMock({
+      content: '',
+      usage: { inputTokens: 70, outputTokens: 12 },
     });
 
     await expect(client.complete('Return empty content')).rejects.toThrow(/provider_empty_response/);
   });
 
   it('throws provider_unsupported_operation for completeWithTools with copilot context', async () => {
-    const client = await createClientFromSession({
-      complete: vi.fn(async () => ({
-        assistant: { content: 'noop' },
-        usage: {
-          inputTokens: 1,
-          outputTokens: 1,
-        },
-      })),
+    const client = await createClientFromMock({
+      content: 'noop',
+      usage: { inputTokens: 1, outputTokens: 1 },
     });
     const tools: ToolDefinition[] = [
       {

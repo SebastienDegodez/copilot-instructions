@@ -42,6 +42,7 @@ export interface LLMClientConfig {
   baseURL?: string | undefined;
   workDir?: string | undefined;
   timeoutMs?: number | undefined;
+  githubToken?: string | undefined;
 }
 
 export function createLLMClient(config: LLMClientConfig): LLMClient {
