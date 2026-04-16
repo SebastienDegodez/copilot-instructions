@@ -25,6 +25,7 @@ function makeResult(id: string, source: EvaluationResult['source'] = 'pr'): Eval
     overallScore: 1,
     passRate: 1,
     passed: true,
+    skipped: false,
     totalTokensInput: 200,
     totalTokensOutput: 80,
     source,
