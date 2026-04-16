@@ -34,13 +34,9 @@ async function loadCopilotClientFactory(): Promise<(config: LLMClientConfig) => 
 }
 
 function mockCopilotSdkSession(factory: CreateCopilotSession): void {
-  vi.doMock(
-    COPILOT_SDK_MODULE,
-    () => ({
-      createCopilotSession: vi.fn(factory),
-    }),
-    { virtual: true },
-  );
+  vi.doMock(COPILOT_SDK_MODULE, () => ({
+    createCopilotSession: vi.fn(factory),
+  }));
 }
 
 async function createClientFromSession(session: CopilotSession): Promise<LLMClient> {
