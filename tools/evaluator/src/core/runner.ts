@@ -5,7 +5,7 @@ import { ScenariosFileSchema } from '../config/schema.js';
 import { judgeScenario } from './judge.js';
 import { logger } from '../utils/logger.js';
 import { parse } from 'yaml';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync as _statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 /**

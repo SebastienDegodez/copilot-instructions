@@ -72,6 +72,7 @@ export function buildCLI(): Command {
         }
 
         logger.info(result, 'Discovery complete');
+        mkdirSync(dirname(opts.output), { recursive: true });
         writeFileSync(opts.output, JSON.stringify(result, null, 2), 'utf-8');
         logger.info({ output: opts.output }, 'Discovery result written');
       } catch (err) {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterAll } from 'vitest';
-import { discoverChangedEntries, discoverAllEntries, filterByPreviousResults } from '../src/core/discoverer.js';
+import { discoverChangedEntries, discoverAllEntries as _discoverAllEntries, filterByPreviousResults } from '../src/core/discoverer.js';
 import type { GitClient } from '../src/adapters/git-client.js';
 import type { BenchmarkSummary } from '../src/core/types.js';
 import { join } from 'node:path';
