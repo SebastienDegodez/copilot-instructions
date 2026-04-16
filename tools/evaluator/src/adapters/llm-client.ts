@@ -1,4 +1,5 @@
 import { createOpenAIClient } from './llm/openai-client.js';
+import { createCopilotClient } from './llm/copilot-client.js';
 
 export interface LLMCompletionOptions {
   systemPrompt?: string;
@@ -48,7 +49,7 @@ export function createLLMClient(config: LLMClientConfig): LLMClient {
     case 'openai':
       return createOpenAIClient(config);
     case 'copilot':
-      throw new Error('provider_unavailable: provider "copilot" is not implemented yet');
+      return createCopilotClient(config);
     default:
       throw new Error(`provider_invalid: unsupported provider "${String((config as { provider?: unknown }).provider)}"`);
   }

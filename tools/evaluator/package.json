@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@github/copilot-sdk": "^0.2.2",
     "commander": "^12.1.0",
     "openai": "^4.77.0",
     "pino": "^9.6.0",
