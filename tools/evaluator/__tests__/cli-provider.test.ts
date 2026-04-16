@@ -163,6 +163,11 @@ describe('evaluate command provider behavior', () => {
 
   it('fails fast for unsupported provider values', async () => {
     const restoreApiKey = withEnv('LLM_API_KEY', 'openai-key');
+    const stderrChunks: string[] = [];
+    const stderrWriteSpy = vi.spyOn(process.stderr, 'write').mockImplementation(((chunk: unknown) => {
+      stderrChunks.push(String(chunk));
+      return true;
+    }) as typeof process.stderr.write);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number | string | null) => {
       throw new ProcessExitError(code);
     }) as typeof process.exit);
@@ -174,8 +179,12 @@ describe('evaluate command provider behavior', () => {
 
       expect(mockedCreateLLMClient).not.toHaveBeenCalled();
       expect(mockedRunEvaluation).not.toHaveBeenCalled();
+      const stderrOutput = stderrChunks.join('');
+      expect(stderrOutput).toContain('unsupported-provider');
+      expect(stderrOutput).toContain('provider');
     } finally {
       restoreApiKey();
+      stderrWriteSpy.mockRestore();
       exitSpy.mockRestore();
     }
   });
