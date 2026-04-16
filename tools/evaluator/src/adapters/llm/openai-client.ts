@@ -10,10 +10,6 @@ import type {
 } from '../llm-client.js';
 
 export function createOpenAIClient(config: LLMClientConfig): LLMClient {
-  if (!config.apiKey) {
-    throw new Error('openai_api_key_required: LLM API key is required for provider "openai"');
-  }
-
   const openai = new OpenAI({
     apiKey: config.apiKey,
     baseURL: config.baseURL,
