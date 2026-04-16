@@ -82,8 +82,8 @@ describe('runEvaluation — provider-agnostic contract', () => {
 
     // Evaluation must record error — no silent fallback to another provider
     expect(result.scenarios.length).toBeGreaterThanOrEqual(0);
-    // complete() should never be called on a second (fallback) client
-    expect((errorClient.complete as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(0);
+    // complete() should have been called on the injected client only
+    expect((errorClient.complete as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
     // The result itself should indicate failure (no passes when client always errors)
     expect(result.passed).toBe(false);
   });
