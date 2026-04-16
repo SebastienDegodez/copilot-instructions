@@ -513,6 +513,7 @@ jobs:
           npx tsx src/index.ts evaluate \
             --entries "${ENTRIES_FILE}" \
             --model "${MODEL}" \
+            --provider openai \
             --output "${RUNNER_TEMP}/results" \
             --repo-root "${REPO_ROOT}" \
             --source "${SOURCE}" \
