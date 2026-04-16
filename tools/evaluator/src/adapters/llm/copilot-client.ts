@@ -1,4 +1,21 @@
-import { createCopilotSession } from '@github/copilot-sdk';
+// @github/copilot-sdk is loaded lazily at module evaluation time so that a missing
+// SDK does not prevent other providers (e.g. openai) from loading. The dynamic
+// import is wrapped in a try/catch: if the SDK is absent, _createCopilotSession
+// remains undefined and createCopilotClient throws provider_unavailable at call time.
+type CreateCopilotSessionFn = (options: {
+  model: string;
+  workDir?: string;
+  timeoutMs?: number;
+}) => unknown;
+
+let _createCopilotSession: CreateCopilotSessionFn | undefined;
+try {
+  const sdk = await import('@github/copilot-sdk');
+  _createCopilotSession = (sdk as { createCopilotSession: CreateCopilotSessionFn }).createCopilotSession;
+} catch {
+  // SDK absent — provider_unavailable thrown at createCopilotClient call time
+}
+
 import type {
   LLMClient,
   LLMClientConfig,
@@ -147,6 +164,12 @@ function collectResponse(result: unknown): LLMResponse {
 export function createCopilotClient(config: LLMClientConfig): LLMClient {
   const timeoutMs = config.timeoutMs ?? 60000;
 
+  if (!_createCopilotSession) {
+    throw new Error('provider_unavailable: @github/copilot-sdk is not available in this environment');
+  }
+
+  const createCopilotSession = _createCopilotSession;
+
   let session: CopilotSession;
   try {
     session = createCopilotSession({
@@ -162,7 +185,10 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
   return {
     async complete(prompt: string, options: LLMCompletionOptions = {}): Promise<LLMResponse> {
       try {
-        const result = await withTimeout(
+// systemPrompt is provided per-request to enforce replace semantics:
+          // each call supplies its own system prompt rather than appending to a
+          // session-level prompt, keeping inference deterministic across calls.
+          const result = await withTimeout(
           session.complete({
             prompt,
             model: config.model,
