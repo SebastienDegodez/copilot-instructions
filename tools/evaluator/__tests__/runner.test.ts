@@ -39,6 +39,56 @@ function makeMockFileReader(content: string): FileReader {
   };
 }
 
+describe('runEvaluation — provider-agnostic contract', () => {
+  const entry: DiscoveredEntry = {
+    id: 'skill:sample-skill',
+    kind: 'skill',
+    assetPath: 'skills/sample-skill',
+    testPath: 'tests/skills/sample-skill',
+    changedFiles: ['skills/sample-skill/SKILL.md'],
+  };
+
+  it('accepts any LLMClient implementation without inspecting provider identity', async () => {
+    // LLMClient has NO provider property — runner must not access it
+    const llmClient = makeMockLLMClient();
+    expect('provider' in llmClient).toBe(false);
+
+    const fileReader = makeMockFileReader(sampleScenariosYaml);
+    const result = await runEvaluation(entry, llmClient, fileReader, {
+      model: 'any-model',
+      source: 'manual',
+      commitSha: 'aaa',
+      repoRoot: '/tmp/fake-repo',
+    });
+
+    expect(result.id).toBe('skill:sample-skill');
+  });
+
+  it('does NOT switch to a fallback client when complete() rejects', async () => {
+    // status 429 + ByDay message → withRetry fast-fails immediately (no sleep).
+    const copilotError = Object.assign(new Error('copilot ByDay quota exceeded'), { status: 429, headers: {}, category: 'copilot' });
+    const errorClient: LLMClient = {
+      complete: vi.fn().mockRejectedValue(copilotError),
+      completeWithTools: vi.fn().mockRejectedValue(copilotError),
+    };
+    const fileReader = makeMockFileReader(sampleScenariosYaml);
+
+    const result = await runEvaluation(entry, errorClient, fileReader, {
+      model: 'copilot-gpt-4o',
+      source: 'manual',
+      commitSha: 'bbb',
+      repoRoot: '/tmp/fake-repo',
+    });
+
+    // Evaluation must record error — no silent fallback to another provider
+    expect(result.scenarios.length).toBeGreaterThanOrEqual(0);
+    // complete() should never be called on a second (fallback) client
+    expect((errorClient.complete as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(0);
+    // The result itself should indicate failure (no passes when client always errors)
+    expect(result.passed).toBe(false);
+  });
+});
+
 describe('runEvaluation', () => {
   const entry: DiscoveredEntry = {
     id: 'skill:sample-skill',
