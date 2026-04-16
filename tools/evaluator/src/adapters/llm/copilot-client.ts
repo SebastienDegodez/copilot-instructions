@@ -11,7 +11,10 @@ type CreateCopilotSessionFn = (options: {
 let _createCopilotSession: CreateCopilotSessionFn | undefined;
 try {
   const sdk = await import('@github/copilot-sdk');
-  _createCopilotSession = (sdk as { createCopilotSession: CreateCopilotSessionFn }).createCopilotSession;
+  const sdkRecord = sdk as unknown as { createCopilotSession: CreateCopilotSessionFn };
+  if (typeof sdkRecord.createCopilotSession === 'function') {
+    _createCopilotSession = sdkRecord.createCopilotSession;
+  }
 } catch {
   // SDK absent — provider_unavailable thrown at createCopilotClient call time
 }
@@ -174,7 +177,7 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
   try {
     session = createCopilotSession({
       model: config.model,
-      workDir: config.workDir,
+      ...(config.workDir !== undefined ? { workDir: config.workDir } : {}),
       timeoutMs,
     }) as CopilotSession;
   } catch (error) {
@@ -192,10 +195,11 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
           session.complete({
             prompt,
             model: config.model,
-            systemPrompt: options.systemPrompt,
-            maxTokens: options.maxTokens,
-            temperature: options.temperature,
+            ...(options.systemPrompt !== undefined ? { systemPrompt: options.systemPrompt } : {}),
+            ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
+            ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
           }),
+
           timeoutMs,
         );
 

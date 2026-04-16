@@ -111,7 +111,7 @@ export function buildCLI(): Command {
         const llmClient = createLLMClient({
           provider: opts.provider,
           model: opts.model,
-          apiKey,
+          ...(apiKey !== undefined ? { apiKey } : {}),
           workDir: opts.repoRoot,
         });
         const fileReader = createFileReader();
