@@ -98,7 +98,7 @@ function getCurrentEvaluationWorkflowChange(repoRoot: string): string {
   return `.github/workflows/${workflowFile}`;
 }
 
-function writeSummary(repoRoot: string, entryIds: string[]): string {
+function _writeSummary(repoRoot: string, entryIds: string[]): string {
   const summaryPath = join(repoRoot, 'summary.json');
   const summary: BenchmarkSummary = {
     lastUpdated: '2026-03-25T00:00:00Z',

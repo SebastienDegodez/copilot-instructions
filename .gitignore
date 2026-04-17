@@ -10,3 +10,6 @@ website/.env.local
 tools/evaluator/node_modules/
 tools/evaluator/dist/
 tools/evaluator/coverage/
+
+# Local worktrees
+.worktrees/
