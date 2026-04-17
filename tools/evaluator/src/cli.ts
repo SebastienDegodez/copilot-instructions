@@ -87,7 +87,7 @@ export function buildCLI(): Command {
     .description('Run evaluation for discovered entries')
     .requiredOption('--entries <path>', 'Path to discovered.json from discover command')
     .option('--provider <provider>', 'LLM provider: copilot | openai', parseProvider, 'copilot')
-    .option('--model <model>', 'LLM model to use', 'gpt-4o')
+    .option('--model <model>', 'LLM model to use', 'gpt-4.1')
     .option('--output <dir>', 'Output directory for results', 'results')
     .option('--repo-root <path>', 'Repository root path', process.cwd())
     .option('--source <source>', 'Evaluation source', 'manual')
