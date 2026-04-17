@@ -129,6 +129,7 @@ afterEach(() => {
 describe('evaluate command provider behavior', () => {
   it('uses copilot provider when --provider is omitted', async () => {
     const restoreApiKey = withEnv('LLM_API_KEY', 'openai-key');
+    const restoreToken = withEnv('COPILOT_GITHUB_TOKEN', 'gh-test-token');
 
     try {
       await runEvaluateCommand([]);
@@ -141,6 +142,7 @@ describe('evaluate command provider behavior', () => {
       );
     } finally {
       restoreApiKey();
+      restoreToken();
     }
   });
 
@@ -208,6 +210,7 @@ describe('evaluate command provider behavior', () => {
 
   it('does not require LLM_API_KEY when provider is copilot', async () => {
     const restoreApiKey = withEnv('LLM_API_KEY', undefined);
+    const restoreToken = withEnv('COPILOT_GITHUB_TOKEN', 'gh-test-token');
 
     try {
       await runEvaluateCommand(['--provider', 'copilot']);
@@ -220,6 +223,24 @@ describe('evaluate command provider behavior', () => {
       );
     } finally {
       restoreApiKey();
+      restoreToken();
+    }
+  });
+
+  it('requires COPILOT_GITHUB_TOKEN when provider is copilot', async () => {
+    const restoreToken = withEnv('COPILOT_GITHUB_TOKEN', undefined);
+    const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number | string | null) => {
+      throw new ProcessExitError(code);
+    }) as typeof process.exit);
+
+    try {
+      await expect(runEvaluateCommand(['--provider', 'copilot'])).rejects.toMatchObject({ code: 1 });
+      expect(loggerErrorSpy).toHaveBeenCalledWith('COPILOT_GITHUB_TOKEN environment variable is required for copilot provider');
+    } finally {
+      restoreToken();
+      loggerErrorSpy.mockRestore();
+      exitSpy.mockRestore();
     }
   });
 

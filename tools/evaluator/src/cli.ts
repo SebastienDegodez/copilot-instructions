@@ -93,10 +93,14 @@ export function buildCLI(): Command {
     .option('--source <source>', 'Evaluation source', 'manual')
     .option('--commit-sha <sha>', 'Commit SHA being evaluated', 'unknown')
     .action(async (opts: { entries: string; provider: LLMProvider; model: string; output: string; repoRoot: string; source: string; commitSha: string }) => {
-      const githubToken = process.env['COPILOT_GITHUB_TOKEN'];
+      const githubToken = process.env['COPILOT_GITHUB_TOKEN'] || undefined;
       const apiKey = process.env['LLM_API_KEY'];
       if (opts.provider === 'openai' && !apiKey) {
         logger.error('LLM_API_KEY environment variable is required');
+        process.exit(1);
+      }
+      if (opts.provider === 'copilot' && !githubToken) {
+        logger.error('COPILOT_GITHUB_TOKEN environment variable is required for copilot provider');
         process.exit(1);
       }
 

@@ -223,4 +223,30 @@ describe('createCopilotClient contract', () => {
       description: 'Dummy tool for contract test.',
     }));
   });
+
+  it('throws provider_unavailable when githubToken is an empty string', async () => {
+    mockCopilotSdk({ content: 'Should not reach here.', usage: { inputTokens: 1, outputTokens: 1 } });
+    const createCopilotClient = await loadCopilotClientFactory();
+    expect(() =>
+      createCopilotClient({
+        provider: 'copilot',
+        model: 'gpt-4.1',
+        workDir: '/tmp/evaluator',
+        githubToken: '',
+      }),
+    ).toThrow(/provider_unavailable.*empty/);
+  });
+
+  it('throws provider_unavailable when githubToken is whitespace-only', async () => {
+    mockCopilotSdk({ content: 'Should not reach here.', usage: { inputTokens: 1, outputTokens: 1 } });
+    const createCopilotClient = await loadCopilotClientFactory();
+    expect(() =>
+      createCopilotClient({
+        provider: 'copilot',
+        model: 'gpt-4.1',
+        workDir: '/tmp/evaluator',
+        githubToken: '   ',
+      }),
+    ).toThrow(/provider_unavailable.*empty/);
+  });
 });

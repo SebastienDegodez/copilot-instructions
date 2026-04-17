@@ -104,15 +104,25 @@ afterEach(() => {
 
 describe('evaluate command – provider selection', () => {
   it('uses copilot provider when --provider is omitted', async () => {
-    await runEvaluate([]);
+    const prev = process.env['COPILOT_GITHUB_TOKEN'];
+    process.env['COPILOT_GITHUB_TOKEN'] = 'gh-test-token';
 
-    expect(mockedCreateLLMClient).toHaveBeenCalledTimes(1);
-    expect(mockedCreateLLMClient).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'copilot' }),
-    );
+    try {
+      await runEvaluate([]);
+
+      expect(mockedCreateLLMClient).toHaveBeenCalledTimes(1);
+      expect(mockedCreateLLMClient).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: 'copilot' }),
+      );
+    } finally {
+      if (prev === undefined) delete process.env['COPILOT_GITHUB_TOKEN'];
+      else process.env['COPILOT_GITHUB_TOKEN'] = prev;
+    }
   });
 
   it('fails when copilot initialization throws and does not fall back to openai', async () => {
+    const prev = process.env['COPILOT_GITHUB_TOKEN'];
+    process.env['COPILOT_GITHUB_TOKEN'] = 'gh-test-token';
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number | string | null) => {
       throw new ProcessExitError(code);
     }) as typeof process.exit);
@@ -136,6 +146,8 @@ describe('evaluate command – provider selection', () => {
         expect.objectContaining({ provider: 'openai' }),
       );
     } finally {
+      if (prev === undefined) delete process.env['COPILOT_GITHUB_TOKEN'];
+      else process.env['COPILOT_GITHUB_TOKEN'] = prev;
       exitSpy.mockRestore();
     }
   });

@@ -97,6 +97,10 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
     throw new Error('provider_unavailable: @github/copilot-sdk is not available in this environment');
   }
 
+  if (config.githubToken !== undefined && config.githubToken.trim() === '') {
+    throw new Error('provider_unavailable: githubToken is set but empty — check your COPILOT_GITHUB_TOKEN secret');
+  }
+
   const { CopilotClient: CopilotClientCtor, approveAll } = _sdk;
 
   return {
