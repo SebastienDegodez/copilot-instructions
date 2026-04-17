@@ -73,23 +73,8 @@ function isTimeoutError(error: unknown): boolean {
   return /timeout|timed out|idle timeout/i.test(message);
 }
 
-/**
- * The Copilot SDK supports a different model catalog than the raw OpenAI API.
- * Map common OpenAI model names to their Copilot SDK equivalents so the
- * evaluator works out of the box with the workflow's default model (`gpt-4o`).
- */
-const COPILOT_MODEL_MAP: Record<string, string> = {
-  'gpt-4o': 'gpt-4.1',
-  'gpt-4o-mini': 'gpt-4.1-mini',
-};
-
-function resolveCopilotModel(model: string): string {
-  return COPILOT_MODEL_MAP[model] ?? model;
-}
-
 export function createCopilotClient(config: LLMClientConfig): LLMClient {
   const timeoutMs = config.timeoutMs ?? 60000;
-  const resolvedModel = resolveCopilotModel(config.model);
 
   if (!_sdk) {
     throw new Error('provider_unavailable: @github/copilot-sdk is not available in this environment');
@@ -115,7 +100,7 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
       let session: SDKSession;
       try {
         const sessionConfig: SDKSessionConfig = {
-          model: resolvedModel,
+          model: config.model,
           onPermissionRequest: approveAll,
           infiniteSessions: { enabled: false },
           // systemPrompt is provided per-request via replace mode to enforce
@@ -190,7 +175,7 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
         // The description format is set by judge.ts buildReadFileTools():
         //   "Read a documentation file … Available files:\npath1\npath2"
         const descriptionMatch = readFileTool.description.match(/Available files:\n([\s\S]*)/);
-        const filePaths = descriptionMatch
+        const filePaths = descriptionMatch?.[1]
           ? descriptionMatch[1].split('\n').map((p) => p.trim()).filter(Boolean)
           : [];
 

@@ -461,9 +461,7 @@ jobs:
 
       - name: Run evaluation
         env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ASSET_ID: ${{ matrix.entry.id }}
           ASSET_KIND: ${{ matrix.entry.kind }}
           ASSET_PATH: ${{ matrix.entry.assetPath }}

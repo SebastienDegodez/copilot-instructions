@@ -89,8 +89,8 @@ describe('createCopilotClient contract', () => {
     });
   });
 
-  it('maps gpt-4o model to gpt-4.1 for the Copilot SDK', async () => {
-    mockCopilotSdk({ content: 'Mapped model response.', usage: { inputTokens: 10, outputTokens: 5 } });
+  it('passes model name directly to the Copilot SDK without mapping', async () => {
+    mockCopilotSdk({ content: 'Model response.', usage: { inputTokens: 10, outputTokens: 5 } });
     const createCopilotClient = await loadCopilotClientFactory();
     const client = createCopilotClient({
       provider: 'copilot',
@@ -100,14 +100,12 @@ describe('createCopilotClient contract', () => {
 
     await client.complete('Hello');
 
-    // Verify the Copilot SDK was called — the session was created successfully
-    // (if gpt-4o were passed to the SDK, it would reject it)
     const sdk = await import(COPILOT_SDK_MODULE) as { CopilotClient: ReturnType<typeof vi.fn> };
     const mockClientInstance = sdk.CopilotClient.mock.results[0]?.value as {
       createSession: ReturnType<typeof vi.fn>;
     };
     expect(mockClientInstance.createSession).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'gpt-4.1' }),
+      expect.objectContaining({ model: 'gpt-4o' }),
     );
   });
 
