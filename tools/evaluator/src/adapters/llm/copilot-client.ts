@@ -62,6 +62,7 @@ import type {
   ToolDefinition,
   ToolHandler,
 } from '../llm-client.js';
+import { logger } from '../../utils/logger.js';
 
 function asNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
@@ -159,15 +160,20 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
       options: LLMCompletionOptions = {},
     ): Promise<LLMResponse> {
       // The Copilot SDK does not support native tool/function calling.
-      // Fallback: pre-call all read_file handlers to collect file contents,
-      // embed them into the prompt, then use the regular complete method.
+      // Fallback: for the read_file tool (used by the evaluator to provide
+      // skill documentation context), pre-call the handler for every available
+      // file, embed the contents into the prompt, then delegate to complete().
+      // Other tool types are not handled — they will simply be ignored and
+      // the prompt is sent as-is.
       const readFileTool = tools.find((t) => t.name === 'read_file');
       const readFileHandler = toolHandlers.get('read_file');
 
       let enrichedPrompt = prompt;
 
       if (readFileTool && readFileHandler) {
-        // Extract available file paths from the tool description
+        // Extract available file paths from the tool description.
+        // The description format is set by judge.ts buildReadFileTools():
+        //   "Read a documentation file … Available files:\npath1\npath2"
         const descriptionMatch = readFileTool.description.match(/Available files:\n([\s\S]*)/);
         const filePaths = descriptionMatch
           ? descriptionMatch[1].split('\n').map((p) => p.trim()).filter(Boolean)
@@ -180,8 +186,8 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
             try {
               const content = await readFileHandler({ path: filePath });
               fileContents.push(`--- File: ${filePath} ---\n${content}\n--- End: ${filePath} ---`);
-            } catch {
-              // Skip files that fail to read
+            } catch (err) {
+              logger.warn({ err, path: filePath }, 'Skipping file in completeWithTools fallback');
             }
           }
 
