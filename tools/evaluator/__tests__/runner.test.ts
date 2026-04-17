@@ -87,6 +87,26 @@ describe('runEvaluation — provider-agnostic contract', () => {
     // The result itself should indicate failure (no passes when client always errors)
     expect(result.passed).toBe(false);
   });
+
+  it('fails fast on provider_unavailable errors without retrying', async () => {
+    const providerError = new Error('provider_unavailable: unable to create copilot session (Model "gpt-4o" is not available.)');
+    const errorClient: LLMClient = {
+      complete: vi.fn().mockRejectedValue(providerError),
+      completeWithTools: vi.fn().mockRejectedValue(providerError),
+    };
+    const fileReader = makeMockFileReader(sampleScenariosYaml);
+
+    const result = await runEvaluation(entry, errorClient, fileReader, {
+      model: 'gpt-4o',
+      source: 'manual',
+      commitSha: 'ccc',
+      repoRoot: '/tmp/fake-repo',
+    });
+
+    // Should only be called once (no retries)
+    expect((errorClient.complete as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
+    expect(result.passed).toBe(false);
+  });
 });
 
 describe('runEvaluation', () => {

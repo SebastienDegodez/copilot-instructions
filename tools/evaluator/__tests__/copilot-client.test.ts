@@ -89,6 +89,28 @@ describe('createCopilotClient contract', () => {
     });
   });
 
+  it('maps gpt-4o model to gpt-4.1 for the Copilot SDK', async () => {
+    mockCopilotSdk({ content: 'Mapped model response.', usage: { inputTokens: 10, outputTokens: 5 } });
+    const createCopilotClient = await loadCopilotClientFactory();
+    const client = createCopilotClient({
+      provider: 'copilot',
+      model: 'gpt-4o',
+      workDir: '/tmp/evaluator',
+    });
+
+    await client.complete('Hello');
+
+    // Verify the Copilot SDK was called — the session was created successfully
+    // (if gpt-4o were passed to the SDK, it would reject it)
+    const sdk = await import(COPILOT_SDK_MODULE) as { CopilotClient: ReturnType<typeof vi.fn> };
+    const mockClientInstance = sdk.CopilotClient.mock.results[0]?.value as {
+      createSession: ReturnType<typeof vi.fn>;
+    };
+    expect(mockClientInstance.createSession).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'gpt-4.1' }),
+    );
+  });
+
   it('ignores cache token fields and persists only input/output totals', async () => {
     const client = await createClientFromMock({
       content: 'Cache-aware response.',
