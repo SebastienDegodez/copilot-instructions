@@ -153,14 +153,45 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
     },
 
     async completeWithTools(
-      _prompt: string,
-      _tools: ToolDefinition[],
-      _toolHandlers: Map<string, ToolHandler>,
-      _options: LLMCompletionOptions = {},
+      prompt: string,
+      tools: ToolDefinition[],
+      toolHandlers: Map<string, ToolHandler>,
+      options: LLMCompletionOptions = {},
     ): Promise<LLMResponse> {
-      throw new Error(
-        'provider_unsupported_operation: copilot provider does not support completeWithTools',
-      );
+      // The Copilot SDK does not support native tool/function calling.
+      // Fallback: pre-call all read_file handlers to collect file contents,
+      // embed them into the prompt, then use the regular complete method.
+      const readFileTool = tools.find((t) => t.name === 'read_file');
+      const readFileHandler = toolHandlers.get('read_file');
+
+      let enrichedPrompt = prompt;
+
+      if (readFileTool && readFileHandler) {
+        // Extract available file paths from the tool description
+        const descriptionMatch = readFileTool.description.match(/Available files:\n([\s\S]*)/);
+        const filePaths = descriptionMatch
+          ? descriptionMatch[1].split('\n').map((p) => p.trim()).filter(Boolean)
+          : [];
+
+        if (filePaths.length > 0) {
+          const fileContents: string[] = [];
+
+          for (const filePath of filePaths) {
+            try {
+              const content = await readFileHandler({ path: filePath });
+              fileContents.push(`--- File: ${filePath} ---\n${content}\n--- End: ${filePath} ---`);
+            } catch {
+              // Skip files that fail to read
+            }
+          }
+
+          if (fileContents.length > 0) {
+            enrichedPrompt = `${prompt}\n\nThe following reference files are available for context:\n\n${fileContents.join('\n\n')}`;
+          }
+        }
+      }
+
+      return this.complete(enrichedPrompt, options);
     },
   };
 }

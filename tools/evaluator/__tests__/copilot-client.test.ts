@@ -124,10 +124,42 @@ describe('createCopilotClient contract', () => {
     await expect(client.complete('Return empty content')).rejects.toThrow(/provider_empty_response/);
   });
 
-  it('throws provider_unsupported_operation for completeWithTools with copilot context', async () => {
+  it('completeWithTools falls back to complete with embedded file contents', async () => {
     const client = await createClientFromMock({
-      content: 'noop',
-      usage: { inputTokens: 1, outputTokens: 1 },
+      content: 'Answer using file context.',
+      usage: { inputTokens: 200, outputTokens: 50 },
+    });
+    const tools: ToolDefinition[] = [
+      {
+        name: 'read_file',
+        description: `Read a documentation file from the skill/plugin. Available files:\nREADME.md\nSKILL.md`,
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path' },
+          },
+          required: ['path'],
+        },
+      },
+    ];
+    const handlers = new Map<string, ToolHandler>();
+    handlers.set('read_file', async (args: Record<string, unknown>) => {
+      const path = String(args['path'] ?? '');
+      if (path === 'README.md') return '# Project README';
+      if (path === 'SKILL.md') return '# Skill Definition';
+      return `File not found: ${path}`;
+    });
+
+    const result = await client.completeWithTools('Use tools', tools, handlers);
+    expect(result.content).toBe('Answer using file context.');
+    expect(result.tokensInput).toBe(200);
+    expect(result.tokensOutput).toBe(50);
+  });
+
+  it('completeWithTools works with no read_file tool defined', async () => {
+    const client = await createClientFromMock({
+      content: 'No tools needed.',
+      usage: { inputTokens: 10, outputTokens: 5 },
     });
     const tools: ToolDefinition[] = [
       {
@@ -138,14 +170,7 @@ describe('createCopilotClient contract', () => {
     ];
     const handlers = new Map<string, ToolHandler>();
 
-    await expect(
-      client.completeWithTools('Use tools', tools, handlers),
-    ).rejects.toThrow(/provider_unsupported_operation/);
-    await expect(
-      client.completeWithTools('Use tools', tools, handlers),
-    ).rejects.toThrow(/copilot/i);
-    await expect(
-      client.completeWithTools('Use tools', tools, handlers),
-    ).rejects.toThrow(/completeWithTools/);
+    const result = await client.completeWithTools('Use tools', tools, handlers);
+    expect(result.content).toBe('No tools needed.');
   });
 });
