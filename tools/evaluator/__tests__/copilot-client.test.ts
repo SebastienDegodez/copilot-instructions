@@ -56,6 +56,10 @@ function mockCopilotSdk(opts: MockSessionOptions): void {
       }),
     })),
     approveAll: vi.fn(() => ({ kind: 'approved' })),
+    defineTool: vi.fn((name: string, config: Record<string, unknown>) => ({
+      name,
+      ...config,
+    })),
   }));
 }
 
@@ -144,7 +148,7 @@ describe('createCopilotClient contract', () => {
     await expect(client.complete('Return empty content')).rejects.toThrow(/provider_empty_response/);
   });
 
-  it('completeWithTools falls back to complete with embedded file contents', async () => {
+  it('completeWithTools registers tools natively on the SDK session', async () => {
     const client = await createClientFromMock({
       content: 'Answer using file context.',
       usage: { inputTokens: 200, outputTokens: 50 },
@@ -174,9 +178,29 @@ describe('createCopilotClient contract', () => {
     expect(result.content).toBe('Answer using file context.');
     expect(result.tokensInput).toBe(200);
     expect(result.tokensOutput).toBe(50);
+
+    // Verify defineTool was called with our tool definition
+    const sdk = await import(COPILOT_SDK_MODULE) as { defineTool: ReturnType<typeof vi.fn> };
+    expect(sdk.defineTool).toHaveBeenCalledWith('read_file', expect.objectContaining({
+      description: expect.stringContaining('Available files'),
+      skipPermission: true,
+    }));
+
+    // Verify tools were passed to createSession
+    const sdkClient = (await import(COPILOT_SDK_MODULE) as { CopilotClient: ReturnType<typeof vi.fn> }).CopilotClient;
+    const mockClientInstance = sdkClient.mock.results[0]?.value as {
+      createSession: ReturnType<typeof vi.fn>;
+    };
+    expect(mockClientInstance.createSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tools: expect.arrayContaining([
+          expect.objectContaining({ name: 'read_file' }),
+        ]),
+      }),
+    );
   });
 
-  it('completeWithTools works with no read_file tool defined', async () => {
+  it('completeWithTools passes tools even when no handler is registered', async () => {
     const client = await createClientFromMock({
       content: 'No tools needed.',
       usage: { inputTokens: 10, outputTokens: 5 },
@@ -192,5 +216,11 @@ describe('createCopilotClient contract', () => {
 
     const result = await client.completeWithTools('Use tools', tools, handlers);
     expect(result.content).toBe('No tools needed.');
+
+    // Verify defineTool was called for the tool
+    const sdk = await import(COPILOT_SDK_MODULE) as { defineTool: ReturnType<typeof vi.fn> };
+    expect(sdk.defineTool).toHaveBeenCalledWith('dummy_tool', expect.objectContaining({
+      description: 'Dummy tool for contract test.',
+    }));
   });
 });

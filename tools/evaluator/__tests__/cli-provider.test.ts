@@ -223,9 +223,9 @@ describe('evaluate command provider behavior', () => {
     }
   });
 
-  it('passes GITHUB_TOKEN to the LLM client when available', async () => {
+  it('passes COPILOT_GITHUB_TOKEN to the LLM client when available', async () => {
     const restoreApiKey = withEnv('LLM_API_KEY', undefined);
-    const restoreGithubToken = withEnv('GITHUB_TOKEN', 'gh-test-token');
+    const restoreGithubToken = withEnv('COPILOT_GITHUB_TOKEN', 'gh-test-token');
 
     try {
       await runEvaluateCommand(['--provider', 'copilot']);

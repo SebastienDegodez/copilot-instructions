@@ -461,7 +461,7 @@ jobs:
 
       - name: Run evaluation
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN }}
           ASSET_ID: ${{ matrix.entry.id }}
           ASSET_KIND: ${{ matrix.entry.kind }}
           ASSET_PATH: ${{ matrix.entry.assetPath }}

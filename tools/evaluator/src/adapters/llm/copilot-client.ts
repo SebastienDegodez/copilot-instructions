@@ -6,6 +6,14 @@
 type PermissionResult = { kind: string };
 type OnPermissionRequest = (req: unknown, inv: unknown) => PermissionResult;
 
+type SDKTool = {
+  name: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+  handler: (args: unknown, invocation: unknown) => Promise<unknown> | unknown;
+  skipPermission?: boolean;
+};
+
 type SDKSession = {
   sendAndWait(opts: { prompt: string }, timeout?: number): Promise<SDKAssistantMessage | undefined>;
   on(eventType: string, handler: (event: { data: unknown }) => void): () => void;
@@ -28,6 +36,7 @@ type SDKSessionConfig = {
   systemMessage?: { mode?: string; content?: string };
   onPermissionRequest: OnPermissionRequest;
   infiniteSessions?: { enabled: boolean };
+  tools?: SDKTool[];
 };
 
 type SDKClientInstance = {
@@ -38,9 +47,17 @@ type SDKClientInstance = {
 
 type SDKClientCtor = new (options?: SDKClientOptions) => SDKClientInstance;
 
+type DefineToolFn = (name: string, config: {
+  description?: string;
+  parameters?: Record<string, unknown>;
+  handler: (args: unknown, invocation: unknown) => Promise<unknown> | unknown;
+  skipPermission?: boolean;
+}) => SDKTool;
+
 type SDKModule = {
   CopilotClient: SDKClientCtor;
   approveAll: OnPermissionRequest;
+  defineTool: DefineToolFn;
 };
 
 let _sdk: SDKModule | undefined;
@@ -159,45 +176,88 @@ export function createCopilotClient(config: LLMClientConfig): LLMClient {
       toolHandlers: Map<string, ToolHandler>,
       options: LLMCompletionOptions = {},
     ): Promise<LLMResponse> {
-      // The Copilot SDK does not support native tool/function calling.
-      // Fallback: for the read_file tool (used by the evaluator to provide
-      // skill documentation context), pre-call the handler for every available
-      // file, embed the contents into the prompt, then delegate to complete().
-      // Other tool types are not handled — they will simply be ignored and
-      // the prompt is sent as-is.
-      const readFileTool = tools.find((t) => t.name === 'read_file');
-      const readFileHandler = toolHandlers.get('read_file');
-
-      let enrichedPrompt = prompt;
-
-      if (readFileTool && readFileHandler) {
-        // Extract available file paths from the tool description.
-        // The description format is set by judge.ts buildReadFileTools():
-        //   "Read a documentation file … Available files:\npath1\npath2"
-        const descriptionMatch = readFileTool.description.match(/Available files:\n([\s\S]*)/);
-        const filePaths = descriptionMatch?.[1]
-          ? descriptionMatch[1].split('\n').map((p) => p.trim()).filter(Boolean)
-          : [];
-
-        if (filePaths.length > 0) {
-          const fileContents: string[] = [];
-
-          for (const filePath of filePaths) {
-            try {
-              const content = await readFileHandler({ path: filePath });
-              fileContents.push(`--- File: ${filePath} ---\n${content}\n--- End: ${filePath} ---`);
-            } catch (err) {
-              logger.warn({ err, path: filePath }, 'Skipping file in completeWithTools fallback');
+      // Convert evaluator tool definitions + handlers into SDK Tool objects
+      // so the Copilot agent natively calls them during inference.
+      const sdkTools: SDKTool[] = tools.map((tool) => {
+        const handler = toolHandlers.get(tool.name);
+        return _sdk!.defineTool(tool.name, {
+          description: tool.description,
+          parameters: tool.parameters,
+          handler: async (args: unknown) => {
+            if (!handler) {
+              return `Tool "${tool.name}" has no handler registered.`;
             }
-          }
+            return handler(args as Record<string, unknown>);
+          },
+          skipPermission: true,
+        });
+      });
 
-          if (fileContents.length > 0) {
-            enrichedPrompt = `${prompt}\n\nThe following reference files are available for context:\n\n${fileContents.join('\n\n')}`;
-          }
-        }
+      const clientOptions: SDKClientOptions = config.githubToken !== undefined
+        ? { githubToken: config.githubToken, useLoggedInUser: false, logLevel: 'error' }
+        : { useLoggedInUser: true, logLevel: 'error' };
+
+      const client = new CopilotClientCtor(clientOptions);
+
+      try {
+        await client.start();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`provider_unavailable: unable to start copilot client (${message})`);
       }
 
-      return this.complete(enrichedPrompt, options);
+      let session: SDKSession;
+      try {
+        const sessionConfig: SDKSessionConfig = {
+          model: config.model,
+          onPermissionRequest: approveAll,
+          infiniteSessions: { enabled: false },
+          tools: sdkTools,
+          ...(options.systemPrompt !== undefined
+            ? { systemMessage: { mode: 'replace', content: options.systemPrompt } }
+            : {}),
+        };
+        session = await client.createSession(sessionConfig);
+      } catch (error) {
+        await client.stop().catch(() => {});
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`provider_unavailable: unable to create copilot session (${message})`);
+      }
+
+      let tokensInput = 0;
+      let tokensOutput = 0;
+
+      session.on('assistant.usage', (event) => {
+        const data = event.data as Record<string, unknown>;
+        tokensInput += asNumber(data['inputTokens']);
+        tokensOutput += asNumber(data['outputTokens']);
+      });
+
+      try {
+        const result = await session.sendAndWait({ prompt }, timeoutMs);
+
+        const content = result?.data?.content?.trim() ?? '';
+        if (!content) {
+          throw new Error('provider_empty_response: copilot returned empty assistant content');
+        }
+
+        return { content, tokensInput, tokensOutput };
+      } catch (error) {
+        if (error instanceof Error && /provider_empty_response/.test(error.message)) {
+          throw error;
+        }
+
+        if (isTimeoutError(error)) {
+          const message = error instanceof Error ? error.message : String(error);
+          throw new Error(`provider_timeout: copilot request timed out (${message})`);
+        }
+
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`provider_unavailable: copilot request failed (${message})`);
+      } finally {
+        await session.disconnect().catch(() => {});
+        await client.stop().catch(() => {});
+      }
     },
   };
 }
