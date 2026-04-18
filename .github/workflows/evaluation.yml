@@ -1,6 +1,11 @@
-name: Evaluation Pipeline
+name: Evaluation Pipeline (disabled)
 
-# Trigger model:
+# DISABLED: This pipeline has been intentionally disabled.
+# To re-enable, restore the original triggers below and remove the
+# workflow_dispatch-only configuration.
+#
+# Original trigger model:
+#   push                → main branch pushes
 #   pull_request        → same-repo PRs: sets initial evaluation-status (success or pending)
 #   pull_request_target → fork PRs:      sets initial evaluation-status (always pending)
 #   issue_comment       → /evaluate gate + full evaluation pipeline
@@ -8,38 +13,6 @@ name: Evaluation Pipeline
 #   schedule            → incremental pipeline against benchmark baseline (Mondays 06:00 UTC)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'skills/**'
-      - 'plugins/**'
-      - 'instructions/**'
-      - 'tests/**'
-      - 'tools/evaluator/**'
-      - 'website/**'
-      - 'agents/**'
-      - '.github/workflows/*.yml'
-      - '.github/workflows/*.yaml'
-  pull_request:
-    paths:
-      - 'skills/**'
-      - 'plugins/**'
-      - 'instructions/**'
-      - 'tests/**'
-      - 'tools/evaluator/**'
-      - '.github/workflows/*.yml'
-      - '.github/workflows/*.yaml'
-  pull_request_target:
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'skills/**'
-      - 'plugins/**'
-      - 'instructions/**'
-      - 'tests/**'
-      - '.github/workflows/*.yml'
-      - '.github/workflows/*.yaml'
-  issue_comment:
-    types: [created]
   workflow_dispatch:
     inputs:
       evaluate_all:
@@ -50,8 +23,40 @@ on:
         description: 'LLM model to use'
         type: string
         default: 'gpt-4o'
-  schedule:
-    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'skills/**'
+  #     - 'plugins/**'
+  #     - 'instructions/**'
+  #     - 'tests/**'
+  #     - 'tools/evaluator/**'
+  #     - 'website/**'
+  #     - 'agents/**'
+  #     - '.github/workflows/*.yml'
+  #     - '.github/workflows/*.yaml'
+  # pull_request:
+  #   paths:
+  #     - 'skills/**'
+  #     - 'plugins/**'
+  #     - 'instructions/**'
+  #     - 'tests/**'
+  #     - 'tools/evaluator/**'
+  #     - '.github/workflows/*.yml'
+  #     - '.github/workflows/*.yaml'
+  # pull_request_target:
+  #   types: [opened, synchronize, reopened]
+  #   paths:
+  #     - 'skills/**'
+  #     - 'plugins/**'
+  #     - 'instructions/**'
+  #     - 'tests/**'
+  #     - '.github/workflows/*.yml'
+  #     - '.github/workflows/*.yaml'
+  # issue_comment:
+  #   types: [created]
+  # schedule:
+  #   - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
 
 concurrency:
   group: evaluation-${{ github.event.pull_request.number || github.ref }}
