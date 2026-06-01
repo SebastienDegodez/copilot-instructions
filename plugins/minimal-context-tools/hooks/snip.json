@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "{{project_dir}}/snip-rewrite.sh",
+        "cwd": ".",
+        "timeoutSec": 15
+      }      
+    ]
+  }
+}
