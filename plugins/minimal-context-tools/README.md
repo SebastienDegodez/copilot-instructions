@@ -83,17 +83,13 @@ go install github.com/edouard-claude/snip/cmd/snip@latest
 
 ## Snip Hook
 
-The `setup-snip-hooks` skill scaffolds a ready-to-use `PreToolUse` hook into a project's `.github/hooks/` directory. It transparently rewrites supported commands through `snip` before they reach the LLM context.
+The plugin ships a ready-to-use `preToolUse` hook at `hooks/snip.json` that transparently rewrites supported commands through `snip` before their output reaches the LLM context. The hook script path is resolved through `${CLAUDE_PLUGIN_ROOT}`, so it works as soon as the plugin is installed from the marketplace — no per-project setup required.
 
-### Why a skill instead of a bundled hook?
+### Per-project fallback
 
-Copilot plugins currently **cannot ship functional hooks** directly. Hooks require a **hardcoded `cwd`** in `hooks.json` — there is no dynamic variable (like `${PLUGIN_ROOT}`) to resolve the hook script path at runtime. Because the path must be relative to the project root, the hook files **must live inside each target project**.
+For projects that consume the hook **without** installing the plugin, the `setup-snip-hooks` skill scaffolds the same hook into the project's `.github/hooks/` directory (`snip.json` + `snip-rewrite.sh`).
 
-This means a plugin cannot register a hook once for all workspaces; it has to be copied into every project that needs it. The `setup-snip-hooks` skill automates this scaffolding step.
-
-> **Future evolution:** If Copilot/VS Code adds support for dynamic path resolution in `hooks.json` (e.g. environment variables or plugin-relative paths), this skill could be replaced by a hook shipped directly within the plugin — no per-project scaffolding needed.
-
-The hook intercepts: `git`, `go`, `cargo`, `npm`, `npx`, `yarn`, `pnpm`, `docker`, `kubectl`, `make`, `pip`, `pytest`, `jest`, `tsc`, `eslint`, `rustc`.
+The hook intercepts: `git`, `go`, `cargo`, `dotnet`, `npm`, `npx`, `yarn`, `pnpm`, `docker`, `kubectl`, `make`, `pip`, `pytest`, `jest`, `tsc`, `eslint`, `rustc`.
 
 > On macOS, if Gatekeeper blocks snip after Homebrew install:
 > ```bash

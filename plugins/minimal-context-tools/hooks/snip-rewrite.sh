@@ -41,21 +41,14 @@ esac
 # Strip leading env var assignments (e.g. CGO_ENABLED=0 go test)
 BARE_CMD=$(echo "$FIRST_CMD" | sed 's/^[A-Za-z_][A-Za-z0-9_]*=[^ ]* *//')
 
-# Extract the base command name
-BASE=$(echo "$BARE_CMD" | awk '{print $1}')
-
-# Check if this command is supported
-REWRITE=""
-case "$BASE" in
-  git|go|cargo|dotnet|npm|npx|yarn|pnpm|docker|kubectl|make|pip|pytest|jest|tsc|eslint|rustc)
-    REWRITE=$(echo "$CMD" | sed "s|$BARE_CMD|snip $BARE_CMD|")
-    ;;
-esac
-
-# No match — allow original command unchanged
-if [ -z "$REWRITE" ]; then
+# Nothing left after stripping env vars — allow original command unchanged
+if [ -z "$BARE_CMD" ]; then
   exit 0
 fi
+
+# snip 0.19+ wraps any command transparently (passthrough on unsupported tools),
+# so prepend snip unconditionally instead of maintaining an allowlist.
+REWRITE=$(echo "$CMD" | sed "s|$BARE_CMD|snip $BARE_CMD|")
 
 # Build output in the appropriate format
 if [ "$FORMAT" = "copilot" ]; then

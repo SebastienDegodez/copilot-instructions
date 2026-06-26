@@ -38,7 +38,7 @@ If either is missing, **STOP** — install before proceeding.
 ```bash
 mkdir -p .github/hooks
 cp templates/snip-rewrite.sh .github/hooks/snip-rewrite.sh
-cp templates/hooks.json      .github/hooks/hooks.json
+cp templates/snip.json       .github/hooks/snip.json
 ```
 
 3. Make the hook script executable:
@@ -47,18 +47,20 @@ cp templates/hooks.json      .github/hooks/hooks.json
 chmod +x .github/hooks/snip-rewrite.sh
 ```
 
-4. If `.github/hooks/hooks.json` already exists, **merge** the `preToolUse` entry instead of overwriting.
+4. If `.github/hooks/snip.json` already exists, **merge** the `preToolUse` entry instead of overwriting.
 
 ## What Gets Created
 
 | File | Purpose |
 |------|---------|
 | `snip-rewrite.sh` | preToolUse hook — rewrites commands through snip (Claude Code + Copilot formats) |
-| `hooks.json` | Hook registration for Claude Code plugin system |
+| `snip.json` | Hook registration (Copilot CLI + Claude Code) |
 
-## Supported Commands
+> **Already installed via marketplace?** When `minimal-context-tools` is installed as a plugin, the hook ships directly under `hooks/snip.json` and resolves the script through `${CLAUDE_PLUGIN_ROOT}` — no per-project scaffolding needed. This skill is the fallback for projects that consume the hook without the plugin.
 
-`git`, `go`, `cargo`, `dotnet`, `npm`, `npx`, `yarn`, `pnpm`, `docker`, `kubectl`, `make`, `pip`, `pytest`, `jest`, `tsc`, `eslint`, `rustc`
+## Command Coverage
+
+snip `0.19+` wraps **any** command transparently — unsupported tools pass through untouched. The hook therefore prepends `snip` to every command instead of maintaining an allowlist. Commands already prefixed with `snip` are skipped, and leading env-var assignments (e.g. `CGO_ENABLED=0 go test`) are preserved.
 
 ## .NET Filters (dotnet build / dotnet test)
 
