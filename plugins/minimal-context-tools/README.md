@@ -30,7 +30,8 @@ The context window is a shared resource. These skills are designed to:
 - **analyzing-code** — Code statistics analysis by language (`tokei`)
 
 ### Setup Skills
-- **setup-snip-hooks** — Scaffolds `snip` preToolUse hooks into a project's `.github/hooks/` directory
+- install edouard-claude/snip to transparently rewrite commands through snip (Claude Code + Copilot formats)
+http://edouard-claude.github.io/snip/
 
 ## Common Workflows
 
