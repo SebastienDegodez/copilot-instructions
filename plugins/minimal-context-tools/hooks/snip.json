@@ -4,8 +4,8 @@
     "preToolUse": [
       {
         "type": "command",
-        "bash": "\"${CLAUDE_PLUGIN_ROOT}/hooks/snip-rewrite.sh\"",
-        "powershell": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/snip-rewrite.sh\"",
+        "bash": "snip hook copilot",
+        "powershell": "snip hook copilot",
         "timeoutSec": 10,
         "async": false
       }
