@@ -43,6 +43,7 @@ function makeFreshResult(id: string, source: EvaluationResult['source'] = 'pr'):
     overallScore: 1,
     passRate: 1,
     passed: true,
+    skipped: false,
     totalTokensInput: 200,
     totalTokensOutput: 80,
     source,

@@ -49,7 +49,7 @@ on:
       model:
         description: 'LLM model to use'
         type: string
-        default: 'gpt-4o'
+        default: 'gpt-4.1'
   schedule:
     - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
 
@@ -461,13 +461,12 @@ jobs:
 
       - name: Run evaluation
         env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN }}
           ASSET_ID: ${{ matrix.entry.id }}
           ASSET_KIND: ${{ matrix.entry.kind }}
           ASSET_PATH: ${{ matrix.entry.assetPath }}
           TEST_PATH: ${{ matrix.entry.testPath }}
-          MODEL: ${{ inputs.model || 'gpt-4o' }}
+          MODEL: ${{ inputs.model || 'gpt-4.1' }}
           IS_FORK: ${{ needs.discover.outputs.is-fork }}
           HEAD_SHA: ${{ needs.discover.outputs.head-sha }}
           EVENT_NAME: ${{ github.event_name }}

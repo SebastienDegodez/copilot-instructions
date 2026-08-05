@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import { writeFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,8 +12,17 @@ import { generatePRComment } from './reporters/markdown-reporter.js';
 import { updateBenchmarkSummary } from './reporters/benchmark-reporter.js';
 import { logger } from './utils/logger.js';
 import type { DiscoveredEntry, EvaluationResult } from './core/types.js';
+import type { LLMProvider } from './adapters/llm-client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function parseProvider(value: string): LLMProvider {
+  if (value === 'copilot' || value === 'openai') {
+    return value;
+  }
+
+  throw new InvalidArgumentError(`provider must be one of: copilot, openai (received: ${value})`);
+}
 
 export function buildCLI(): Command {
   const program = new Command();
@@ -63,6 +72,7 @@ export function buildCLI(): Command {
         }
 
         logger.info(result, 'Discovery complete');
+        mkdirSync(dirname(opts.output), { recursive: true });
         writeFileSync(opts.output, JSON.stringify(result, null, 2), 'utf-8');
         logger.info({ output: opts.output }, 'Discovery result written');
       } catch (err) {
@@ -76,15 +86,21 @@ export function buildCLI(): Command {
     .command('evaluate')
     .description('Run evaluation for discovered entries')
     .requiredOption('--entries <path>', 'Path to discovered.json from discover command')
-    .option('--model <model>', 'LLM model to use', 'gpt-4o')
+    .option('--provider <provider>', 'LLM provider: copilot | openai', parseProvider, 'copilot')
+    .option('--model <model>', 'LLM model to use', 'gpt-4.1')
     .option('--output <dir>', 'Output directory for results', 'results')
     .option('--repo-root <path>', 'Repository root path', process.cwd())
     .option('--source <source>', 'Evaluation source', 'manual')
     .option('--commit-sha <sha>', 'Commit SHA being evaluated', 'unknown')
-    .action(async (opts: { entries: string; model: string; output: string; repoRoot: string; source: string; commitSha: string }) => {
+    .action(async (opts: { entries: string; provider: LLMProvider; model: string; output: string; repoRoot: string; source: string; commitSha: string }) => {
+      const githubToken = process.env['COPILOT_GITHUB_TOKEN'] || undefined;
       const apiKey = process.env['LLM_API_KEY'];
-      if (!apiKey) {
+      if (opts.provider === 'openai' && !apiKey) {
         logger.error('LLM_API_KEY environment variable is required');
+        process.exit(1);
+      }
+      if (opts.provider === 'copilot' && !githubToken) {
+        logger.error('COPILOT_GITHUB_TOKEN environment variable is required for copilot provider');
         process.exit(1);
       }
 
@@ -98,7 +114,13 @@ export function buildCLI(): Command {
         }
 
         mkdirSync(opts.output, { recursive: true });
-        const llmClient = createLLMClient({ apiKey, model: opts.model });
+        const llmClient = createLLMClient({
+          provider: opts.provider,
+          model: opts.model,
+          ...(apiKey !== undefined ? { apiKey } : {}),
+          ...(githubToken !== undefined ? { githubToken } : {}),
+          workDir: opts.repoRoot,
+        });
         const fileReader = createFileReader();
         const results: EvaluationResult[] = [];
 

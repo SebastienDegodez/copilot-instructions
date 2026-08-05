@@ -100,3 +100,41 @@ describe('judgeScenario', () => {
     expect(typeof result.passed).toBe('boolean');
   });
 });
+
+describe('judgeScenario — provider-agnostic contract', () => {
+  it('accepts any LLMClient without inspecting provider identity', async () => {
+    const llmClient = makeMockLLMClient([
+      { content: 'function hello() { console.log("hello world"); }' },
+      { content: '{"score": 8, "reasoning": "Good"}' },
+    ]);
+
+    // LLMClient interface has no provider field — judge must not branch on it
+    expect('provider' in llmClient).toBe(false);
+
+    const singleRun: Scenario = { ...sampleScenario, runs: 1 };
+    const result = await judgeScenario(llmClient, singleRun);
+    expect(result.scenarioName).toBe('test-scenario');
+  });
+
+  it('records error and does NOT switch provider when complete() rejects', async () => {
+    // status 429 + ByDay message → withRetry fast-fails immediately (no sleep).
+    const copilotError = Object.assign(new Error('copilot ByDay quota exceeded'), { status: 429, headers: {}, category: 'copilot' });
+    const errorClient: LLMClient = {
+      complete: vi.fn().mockRejectedValue(copilotError),
+      completeWithTools: vi.fn().mockRejectedValue(copilotError),
+    };
+
+    const singleRun: Scenario = { ...sampleScenario, runs: 1 };
+
+    // judgeScenario must not throw; it should record a failed run
+    const result = await judgeScenario(errorClient, singleRun);
+
+    expect(result.runs).toHaveLength(1);
+    expect(result.passed).toBe(false);
+
+    // complete() called only on this client — no secondary client is ever created
+    const callCount = (errorClient.complete as ReturnType<typeof vi.fn>).mock.calls.length +
+      (errorClient.completeWithTools as ReturnType<typeof vi.fn>).mock.calls.length;
+    expect(callCount).toBeGreaterThan(0);
+  });
+});

@@ -86,6 +86,15 @@ function getRetryDelay(err: unknown, fallbackDelay: number): number {
   return fallbackDelay;
 }
 
+/**
+ * Returns true when the error is a provider-level configuration error
+ * (e.g. model not available, SDK absent) that cannot be resolved by retrying.
+ */
+function isNonRetryableProviderError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  return /provider_unavailable|provider_unsupported_operation/.test(err.message);
+}
+
 export async function withRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions = {},
@@ -109,6 +118,12 @@ export async function withRetry<T>(
       // Daily / hourly quotas cannot be resolved by retrying in CI — fail fast
       if (isNonRetryableRateLimit(err)) {
         logger.error({ err }, 'Long-term rate limit exceeded — not retrying (quota is per-day or per-hour)');
+        throw err;
+      }
+
+      // Provider configuration errors (model not available, SDK absent) — fail fast
+      if (isNonRetryableProviderError(err)) {
+        logger.error({ err }, 'Non-retryable provider error — stopping immediately');
         throw err;
       }
 
