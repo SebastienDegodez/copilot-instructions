@@ -7,6 +7,8 @@ description: Use when creating OpenAPI mock examples for Microcks, setting up re
 
 Generate realistic, schema-compliant OpenAPI examples (request/response pairs) for Microcks mocks. All examples must be concrete and directly usable—no placeholders or generic values.
 
+DEMO
+
 ## When to Use
 
 **Use when:**
