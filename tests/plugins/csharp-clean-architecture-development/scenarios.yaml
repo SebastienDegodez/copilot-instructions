@@ -276,3 +276,61 @@ scenarios:
       passing_score: 7.5
     timeout: 60
     runs: 2
+
+  # The prompt names no pattern. Probes (Sonnet, 2 runs): without the skill no bus,
+  # with the full skill no bus, with the bus guidance removed a bus appeared in 2/4
+  # order and ownership runs — the skill's own Pattern B examples pull towards one.
+  - name: orders-feature-without-a-bus
+    description: Feature with invariants and a side effect — no bus, CQS commands, invariant in the aggregate, all unprompted
+    prompt: |
+      Add orders to an existing .NET 10 Clean Architecture solution (one project per
+      layer, minimal APIs). A customer places an order (one or more lines: product
+      code and quantity) through POST /orders, and can cancel it through
+      POST /orders/{id}/cancel, but only while it is still pending. When an order is
+      placed, the customer must get a confirmation email; an email-sending interface
+      is enough. Keep orders in memory. Production code only.
+    expectations:
+      keywords:
+        - "OrderId"
+        - "Cancel"
+      patterns:
+        - '/sealed class Order\b/'
+        - '/static Order \w+\(/'
+        - '/private Order\(/'
+    judge:
+      criteria: |
+        Score on:
+        - No ICommandBus, IQueryBus, MediatR or other dispatcher for these two use cases; endpoints call the use cases directly?
+        - Place and cancel return Task (no value); the caller creates the OrderId and passes it in?
+        - The "only while pending" rule is enforced inside Order.Cancel, not in the use case?
+        - Order is created through a static factory over a private constructor and identified by a typed OrderId?
+        - The use cases are concrete classes, with no interface in front of them?
+      passing_score: 7.5
+    timeout: 120
+    runs: 2
+
+  # The prompt never mentions a SharedKernel. Probes (Sonnet, 2 runs, with and
+  # without the skill): every run gave Billing its own Money and created no shared
+  # project, so the SharedKernel guidance was never needed to get this right.
+  - name: second-bounded-context-stays-independent
+    description: Second bounded context — own value objects, no shared kernel with concrete types, unprompted
+    prompt: |
+      An existing .NET 10 Clean Architecture solution handles payment authorization
+      (PaymentAuthorization.Domain/Application/Infrastructure). Add a Billing context
+      beside it, in the same solution: it issues an invoice (invoice number, amount,
+      currency) for each payment that is authorized. Keep the two contexts independent
+      of each other. Keep invoices in memory. Production code only.
+    expectations:
+      keywords:
+        - "Billing.Domain"
+        - "Invoice"
+    judge:
+      criteria: |
+        Score on:
+        - Billing defines its own amount/currency type instead of reusing PaymentAuthorization.Domain.Money?
+        - No shared project holds a concrete value object such as Money?
+        - Billing.Domain and Billing.Application reference nothing from the payment context?
+        - The link between an authorized payment and an invoice is a translation at one composition point, not a Billing dependency on Payment?
+      passing_score: 7.5
+    timeout: 120
+    runs: 2
