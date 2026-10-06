@@ -46,18 +46,6 @@ These three patterns are independent tools. Choose based on what the codebase ac
 > — No → CQS Application Service (Pattern A).  
 > — Yes → Domain Aggregate + CQS or CQRS depending on scale (Pattern B).
 
-## DDD vs POCO — Quick Decision
-
-| Use | When |
-|-----|------|
-| `sealed class Foo : AggregateRoot` + factory method | The object has domain invariants, raises events, or owns child entities |
-| Plain `sealed record Foo(...)` (POCO) | Pure data carrier, no invariants, used only inside Application or API (DTOs, ViewModels) |
-| `sealed class Bar : ValueObject` | Immutable, identity-by-value, represents a domain concept (e.g., `PolicyNumber`, `Horsepower`) |
-
-**Rule of thumb:** if you're tempted to add an `if` or `throw` to protect the object's state — it's a Domain object (aggregate or value object), not a POCO.
-
-> **Aggregate vs POCO test:** write the business method first. If you never need `if (condition) throw new DomainException(...)` to protect state, the object has no invariants — make it a plain `sealed record`, not an `AggregateRoot`. DDD complexity is the cure for invariants, not for data.
-
 ## Implementation Flow
 
 ```dot
@@ -210,50 +198,10 @@ app.MapGet("/orders/{id}", async (Guid id, IQueryBus bus)
 
 | Layer | Purpose | Allowed Dependencies |
 |-------|---------|----------------------|
-| **SharedKernel** *(multi-context only)* | Generic interfaces + base classes only — zero domain logic | None |
-| **Domain** | Pure business logic, aggregates | SharedKernel *(optional)* |
-| **Application** | Use cases, Handler orchestration | Domain, SharedKernel *(optional)* |
+| **Domain** | Pure business logic, aggregates | None |
+| **Application** | Use cases, Handler orchestration | Domain |
 | **Infrastructure** | Database, DI registration, CQRS Bus | Application, Domain |
 | **API** | Endpoints, JSON mapping | **Infrastructure** (Transitive: Application, Domain) |
-
-## Shared Kernel (Multi-Context Solutions)
-
-Use a `SharedKernel` project when **two or more Bounded Contexts** need to share handler interfaces or base classes. It must contain **zero domain logic**.
-
-```
-SharedKernel/
-├── Abstractions/
-│   ├── ICommandHandler.cs   ← generic interface only
-│   ├── IQueryHandler.cs
-│   ├── ValueObject.cs       ← base class, no business logic
-│   └── AggregateRoot.cs     ← base class, exposes DomainEvents collection
-└── Events/
-    └── DomainEvent.cs       ← abstract base for all domain events
-```
-
-**Dependency rule for SharedKernel:** it depends on **nothing**. Domain and Application reference it, not the other way around.
-
-```csharp
-// SharedKernel/Abstractions/ICommandHandler.cs — commands are void (CQS)
-public interface ICommandHandler<in TCommand>
-{
-    Task HandleAsync(TCommand command, CancellationToken ct = default);
-}
-
-// SharedKernel/Abstractions/IQueryHandler.cs — queries return a result
-public interface IQueryHandler<in TQuery, TResult>
-{
-    Task<TResult> HandleAsync(TQuery query, CancellationToken ct = default);
-}
-
-// Each context's Application layer implements it:
-// Orders.Application/Features/PlaceOrder/PlaceOrderCommandHandler.cs
-using SharedKernel.Abstractions;
-public sealed class PlaceOrderCommandHandler
-    : ICommandHandler<PlaceOrderCommand> { }
-```
-
-**What NEVER goes in SharedKernel:** concrete value objects like `Money`, `Address` (each context defines its own); aggregate logic; context-specific event types.
 
 ## Domain Events
 
@@ -261,7 +209,7 @@ public sealed class PlaceOrderCommandHandler
 
 ```csharp
 // Domain/Orders/Events/OrderPlacedEvent.cs — sealed, in Domain
-public sealed class OrderPlacedEvent : DomainEvent  // DomainEvent base from SharedKernel (or Domain if single-context)
+public sealed class OrderPlacedEvent : DomainEvent  // DomainEvent base in Domain
 {
     public OrderId OrderId { get; }
 
@@ -345,7 +293,6 @@ See [Interface Placement](references/interface-placement.md) for full decision t
 | "Referencing Application in API is faster" | It bypasses the Bus/Handler pattern and couples contract to implementation. |
 | "Domain needs this NuGet package" | If it's not a primitive/System lib, it doesn't belong in Domain. |
 | "Every handler needs a CQRS bus" | Only if you need a cross-cutting pipeline or read/write model separation. Simple CRUD with a CQS Application service is valid and cleaner. |
-| "Every entity should be an Aggregate" | Only if the entity has invariants to protect. Plain data without business rules → use records and simple repositories. |
 
 ## Red Flags - STOP and Start Over
 
@@ -353,7 +300,6 @@ See [Interface Placement](references/interface-placement.md) for full decision t
 - `using MyApp.Infrastructure;` inside Domain layer files
 - Injecting `ICommandHandler<>` or `IQueryHandler<,>` directly in API endpoints when using a CQRS bus — route through `ICommandBus` / `IQueryBus`
 - Command handler returns a domain ID — commands must be void (`Task`); the ID must be part of the incoming command
-- Non-sealed classes in Domain
 - Handlers performing HTTP calls directly (use an Infrastructure service via interface)
 - Adding `ICommandBus` / `IQueryBus` to a simple CRUD API with no domain logic, invariants, or cross-cutting pipeline — use a CQS Application use case (Pattern A) instead
 - Application class named `*Service` (e.g., `OrderService`) — rename to `*UseCase`; "Service" implies infrastructure or shared state, not a single bounded interaction
@@ -367,10 +313,7 @@ See [Interface Placement](references/interface-placement.md) for full decision t
 | Command handler returns an ID | Commands are void — the caller generates the ID and passes it in the command |
 | Read result named `ProductDto` | Name it `ProductViewModel` to distinguish from transfer objects |
 | `typeof(Product).Assembly` in tests | Use `typeof(IApplicationMarker).Assembly` for reliable discovery |
-| Non-sealed Domain classes | All Domain classes must be `sealed` (enforced by NetArchTest) |
-| SharedKernel references Domain | SharedKernel must depend on **nothing** — if it references Domain, invert: Domain references SharedKernel |
 | Handler contains `if`/domain invariant logic | Delegate to Domain aggregate methods — handlers orchestrate only. Exception: Application use cases may contain access policy checks (`if (resource.OwnerId != _currentUser.Id) throw`) — that is use-case policy, not domain invariant logic |
-| Creating Domain aggregates for CRUD entities with no invariants | Use a plain Application service with direct repository access — no aggregate, no events |
 | Adding CQRS bus for < 3 use cases with no cross-cutting concerns | Use Pattern A (CQS Application service) — less indirection, same layer safety |
 
 ---
@@ -384,7 +327,6 @@ See [Interface Placement](references/interface-placement.md) for full decision t
 - [Project Structure](references/project-structure.md) — File/folder conventions and layer organization guidance
 - [NetArchTest Rules](references/netarchtest-rules.md) — Automated boundary enforcement
 - [DDD Patterns](references/ddd.md) — Aggregates, factory methods, value objects, and domain events (optional)
-- [Shared Kernel](references/shared-kernel.md) — Shared abstractions for multi-context solutions (optional)
 - [Interface Placement](references/interface-placement.md) — Repository, authorization, and ICurrentUser placement with GetOrder (read policy) + CancelOrder (domain invariant) examples
 - [Init Script](scripts/init-project.sh) — Bootstrap script for new project setup (`./init-project.sh MyApp`)
 - [ArchitectureTests Template](templates/IntegrationTests/ArchitectureTests.cs) — Drop-in architecture test template
