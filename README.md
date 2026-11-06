@@ -95,7 +95,7 @@ One plugin per language server, giving the agent IDE-grade code intelligence (go
 |---|---|---|
 | [python-lsp](plugins/python-lsp/) | Pyright | `.py` `.pyi` `.pyw` |
 | [java-lsp](plugins/java-lsp/) | Eclipse JDT.LS | `.java` |
-| [csharp-lsp](plugins/csharp-lsp/) | csharp-ls | `.cs` |
+| [csharp-lsp](plugins/csharp-lsp/) | Roslyn Language Server (Microsoft) | `.cs` |
 | [typescript-lsp](plugins/typescript-lsp/) | TypeScript 7 native (`tsc --lsp`) | `.ts` `.tsx` `.js` `.jsx` `.mts` `.cts` `.mjs` `.cjs` |
 | [dockerfile-lsp](plugins/dockerfile-lsp/) | Docker Language Server | `.dockerfile` `.containerfile` |
 | [json-lsp](plugins/json-lsp/) | VS Code JSON Language Server | `.json` `.jsonc` |

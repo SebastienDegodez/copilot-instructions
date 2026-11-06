@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "csharp-lsp",
   "version": "1.0.0",
-  "description": "C# language server (csharp-ls, Roslyn-based) for code intelligence in GitHub Copilot CLI and Claude Code",
+  "description": "C# language server (official Microsoft Roslyn LSP) for code intelligence in GitHub Copilot CLI and Claude Code",
   "author": {
     "name": "Sebastien DEGODEZ"
   },

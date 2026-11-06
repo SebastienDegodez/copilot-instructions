@@ -1,6 +1,10 @@
 {
-  "csharp-ls": {
-    "command": "csharp-ls",
+  "roslyn": {
+    "command": "roslyn-language-server",
+    "args": [
+      "--stdio",
+      "--autoLoadProjects"
+    ],
     "extensionToLanguage": {
       ".cs": "csharp"
     }
