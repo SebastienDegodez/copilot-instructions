@@ -1,0 +1,18 @@
+{
+  "name": "bash-lsp",
+  "version": "1.0.0",
+  "description": "Bash language server with ShellCheck diagnostics for GitHub Copilot CLI and Claude Code",
+  "author": {
+    "name": "Sebastien DEGODEZ"
+  },
+  "homepage": "https://github.com/SebastienDegodez/copilot-instructions/tree/main/plugins/bash-lsp",
+  "repository": "https://github.com/SebastienDegodez/copilot-instructions",
+  "license": "Apache-2.0",
+  "keywords": [
+    "lsp",
+    "bash",
+    "shell",
+    "shellcheck",
+    "scripts"
+  ]
+}

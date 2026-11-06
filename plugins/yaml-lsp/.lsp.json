@@ -1,0 +1,12 @@
+{
+  "yaml": {
+    "command": "yaml-language-server",
+    "args": [
+      "--stdio"
+    ],
+    "extensionToLanguage": {
+      ".yaml": "yaml",
+      ".yml": "yaml"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+name: bash-lsp
+version: 1.0.0
+description: Bash language server with ShellCheck diagnostics for GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - bash
+  - shell
+  - shellcheck
+  - scripts
+skills: []

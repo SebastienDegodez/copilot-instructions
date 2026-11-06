@@ -1,0 +1,13 @@
+{
+  "lspServers": {
+    "cucumber": {
+      "command": "cucumber-language-server",
+      "args": [
+        "--stdio"
+      ],
+      "fileExtensions": {
+        ".feature": "cucumber"
+      }
+    }
+  }
+}

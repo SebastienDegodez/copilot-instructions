@@ -1,0 +1,14 @@
+{
+  "lspServers": {
+    "yaml": {
+      "command": "yaml-language-server",
+      "args": [
+        "--stdio"
+      ],
+      "fileExtensions": {
+        ".yaml": "yaml",
+        ".yml": "yaml"
+      }
+    }
+  }
+}

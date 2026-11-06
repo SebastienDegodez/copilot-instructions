@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "markdown-lsp",
+  "version": "1.0.0",
+  "description": "Markdown language server (Marksman) for links, headings and references in GitHub Copilot CLI and Claude Code",
+  "author": {
+    "name": "Sebastien DEGODEZ"
+  },
+  "homepage": "https://github.com/SebastienDegodez/copilot-instructions/tree/main/plugins/markdown-lsp",
+  "repository": "https://github.com/SebastienDegodez/copilot-instructions",
+  "license": "Apache-2.0",
+  "keywords": [
+    "lsp",
+    "markdown",
+    "marksman",
+    "documentation",
+    "links"
+  ]
+}

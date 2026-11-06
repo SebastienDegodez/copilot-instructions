@@ -1,0 +1,12 @@
+{
+  "bash": {
+    "command": "bash-language-server",
+    "args": [
+      "start"
+    ],
+    "extensionToLanguage": {
+      ".sh": "shellscript",
+      ".bash": "shellscript"
+    }
+  }
+}

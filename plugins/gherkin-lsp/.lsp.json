@@ -1,0 +1,11 @@
+{
+  "cucumber": {
+    "command": "cucumber-language-server",
+    "args": [
+      "--stdio"
+    ],
+    "extensionToLanguage": {
+      ".feature": "cucumber"
+    }
+  }
+}

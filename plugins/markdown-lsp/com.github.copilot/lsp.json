@@ -1,0 +1,14 @@
+{
+  "lspServers": {
+    "marksman": {
+      "command": "marksman",
+      "args": [
+        "server"
+      ],
+      "fileExtensions": {
+        ".md": "markdown",
+        ".markdown": "markdown"
+      }
+    }
+  }
+}

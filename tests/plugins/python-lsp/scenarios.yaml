@@ -1,0 +1,20 @@
+kind: plugin
+ref: plugins/python-lsp
+scenarios:
+  - name: install-and-verify-pyright-server
+    description: Guide the user through installing and verifying the Python language server
+    prompt: |
+      My Copilot CLI cannot find references in my Python project. Using the python-lsp plugin, explain how to install and verify the Python language server.
+    expectations:
+      keywords:
+        - "pyright-langserver"
+        - "npm install -g pyright"
+    judge:
+      criteria: |
+        Score on:
+        - Correctness: Is the exact server command and install command given?
+        - Verification: Does it explain how to check the server (/lsp test pyright in Copilot CLI)?
+        - Clarity: Are the steps actionable for both Copilot CLI and Claude Code?
+      passing_score: 7.0
+    timeout: 60
+    runs: 2

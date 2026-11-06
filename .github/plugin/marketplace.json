@@ -13,6 +13,66 @@
       "name": "minimal-context-tools",
       "source": "./plugins/minimal-context-tools",
       "description": "Collection of efficient CLI tools and workflows optimized for minimal context usage and one-shot patterns with LLMs"
+    },
+    {
+      "name": "python-lsp",
+      "source": "./plugins/python-lsp",
+      "description": "Python language server (Pyright) for code intelligence in GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "java-lsp",
+      "source": "./plugins/java-lsp",
+      "description": "Java language server (Eclipse JDT.LS) for code intelligence in GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "csharp-lsp",
+      "source": "./plugins/csharp-lsp",
+      "description": "C# language server (official Microsoft Roslyn LSP) for code intelligence in GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "typescript-lsp",
+      "source": "./plugins/typescript-lsp",
+      "description": "TypeScript and JavaScript language server (TypeScript 7 native tsc --lsp) for GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "dockerfile-lsp",
+      "source": "./plugins/dockerfile-lsp",
+      "description": "Dockerfile language server (Docker Language Server by Docker Inc.) for GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "json-lsp",
+      "source": "./plugins/json-lsp",
+      "description": "JSON language server (from VS Code) with JSON Schema validation for GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "yaml-lsp",
+      "source": "./plugins/yaml-lsp",
+      "description": "YAML language server (Red Hat) with SchemaStore validation for GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "markdown-lsp",
+      "source": "./plugins/markdown-lsp",
+      "description": "Markdown language server (Marksman) for links, headings and references in GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "gherkin-lsp",
+      "source": "./plugins/gherkin-lsp",
+      "description": "Gherkin language server (Cucumber) linking .feature steps to step definitions for GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "bash-lsp",
+      "source": "./plugins/bash-lsp",
+      "description": "Bash language server with ShellCheck diagnostics for GitHub Copilot CLI and Claude Code",
+      "version": "1.0.0"
     }
   ]
 }

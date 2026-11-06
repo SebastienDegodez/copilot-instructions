@@ -1,0 +1,12 @@
+name: gherkin-lsp
+version: 1.0.0
+description: Gherkin language server (Cucumber) linking .feature steps to step definitions for GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - gherkin
+  - cucumber
+  - bdd
+  - reqnroll
+  - specflow
+skills: []

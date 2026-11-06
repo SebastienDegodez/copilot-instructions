@@ -1,0 +1,20 @@
+kind: plugin
+ref: plugins/dockerfile-lsp
+scenarios:
+  - name: install-and-verify-docker-server
+    description: Guide the user through installing and verifying the Dockerfile language server
+    prompt: |
+      I want Dockerfile diagnostics in Copilot CLI. Using the dockerfile-lsp plugin, explain how to install the server and which file names are supported.
+    expectations:
+      keywords:
+        - "docker-language-server"
+        - ".dockerfile"
+    judge:
+      criteria: |
+        Score on:
+        - Correctness: Is the exact server command and install command given?
+        - Verification: Does it explain how to check the server (/lsp test docker in Copilot CLI)?
+        - Clarity: Are the steps actionable for both Copilot CLI and Claude Code?
+      passing_score: 7.0
+    timeout: 60
+    runs: 2

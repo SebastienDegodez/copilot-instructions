@@ -1,0 +1,12 @@
+name: typescript-lsp
+version: 1.0.0
+description: TypeScript and JavaScript language server (TypeScript 7 native tsc --lsp) for GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - typescript
+  - javascript
+  - react
+  - node
+  - code-intelligence
+skills: []

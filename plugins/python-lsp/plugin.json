@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "python-lsp",
+  "version": "1.0.0",
+  "description": "Python language server (Pyright) for code intelligence in GitHub Copilot CLI and Claude Code",
+  "author": {
+    "name": "Sebastien DEGODEZ"
+  },
+  "homepage": "https://github.com/SebastienDegodez/copilot-instructions/tree/main/plugins/python-lsp",
+  "repository": "https://github.com/SebastienDegodez/copilot-instructions",
+  "license": "Apache-2.0",
+  "keywords": [
+    "lsp",
+    "python",
+    "pyright",
+    "type-checking",
+    "code-intelligence"
+  ]
+}

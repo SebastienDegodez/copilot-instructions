@@ -1,0 +1,14 @@
+{
+  "lspServers": {
+    "roslyn": {
+      "command": "roslyn-language-server",
+      "args": [
+        "--stdio",
+        "--autoLoadProjects"
+      ],
+      "fileExtensions": {
+        ".cs": "csharp"
+      }
+    }
+  }
+}

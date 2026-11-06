@@ -1,0 +1,15 @@
+{
+  "lspServers": {
+    "docker": {
+      "command": "docker-language-server",
+      "args": [
+        "start",
+        "--stdio"
+      ],
+      "fileExtensions": {
+        ".dockerfile": "dockerfile",
+        ".containerfile": "dockerfile"
+      }
+    }
+  }
+}

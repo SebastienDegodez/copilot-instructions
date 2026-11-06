@@ -1,0 +1,21 @@
+{
+  "lspServers": {
+    "typescript": {
+      "command": "tsc",
+      "args": [
+        "--lsp",
+        "--stdio"
+      ],
+      "fileExtensions": {
+        ".ts": "typescript",
+        ".mts": "typescript",
+        ".cts": "typescript",
+        ".tsx": "typescriptreact",
+        ".js": "javascript",
+        ".mjs": "javascript",
+        ".cjs": "javascript",
+        ".jsx": "javascriptreact"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+name: python-lsp
+version: 1.0.0
+description: Python language server (Pyright) for code intelligence in GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - python
+  - pyright
+  - type-checking
+  - code-intelligence
+skills: []

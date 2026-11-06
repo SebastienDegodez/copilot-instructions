@@ -1,0 +1,18 @@
+{
+  "name": "csharp-lsp",
+  "version": "1.0.0",
+  "description": "C# language server (official Microsoft Roslyn LSP) for code intelligence in GitHub Copilot CLI and Claude Code",
+  "author": {
+    "name": "Sebastien DEGODEZ"
+  },
+  "homepage": "https://github.com/SebastienDegodez/copilot-instructions/tree/main/plugins/csharp-lsp",
+  "repository": "https://github.com/SebastienDegodez/copilot-instructions",
+  "license": "Apache-2.0",
+  "keywords": [
+    "lsp",
+    "csharp",
+    "dotnet",
+    "roslyn",
+    "code-intelligence"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "lspServers": {
+    "jdtls": {
+      "command": "jdtls",
+      "fileExtensions": {
+        ".java": "java"
+      },
+      "initializationTimeoutMs": 120000
+    }
+  }
+}
