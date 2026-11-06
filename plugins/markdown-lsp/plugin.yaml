@@ -1,0 +1,12 @@
+name: markdown-lsp
+version: 1.0.0
+description: Markdown language server (Marksman) for links, headings and references in GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - markdown
+  - marksman
+  - documentation
+  - links
+skills:
+  - markdown-lsp-setup

@@ -1,0 +1,15 @@
+{
+  "lspServers": {
+    "pyright": {
+      "command": "pyright-langserver",
+      "args": [
+        "--stdio"
+      ],
+      "fileExtensions": {
+        ".py": "python",
+        ".pyi": "python",
+        ".pyw": "python"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+name: csharp-lsp
+version: 1.0.0
+description: C# language server (csharp-ls, Roslyn-based) for code intelligence in GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - csharp
+  - dotnet
+  - roslyn
+  - code-intelligence
+skills:
+  - csharp-lsp-setup

@@ -1,0 +1,12 @@
+name: dockerfile-lsp
+version: 1.0.0
+description: Dockerfile language server (Docker Language Server by Docker Inc.) for GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - docker
+  - dockerfile
+  - containers
+  - code-intelligence
+skills:
+  - dockerfile-lsp-setup

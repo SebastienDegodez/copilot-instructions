@@ -1,0 +1,12 @@
+name: json-lsp
+version: 1.0.0
+description: JSON language server (from VS Code) with JSON Schema validation for GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - json
+  - jsonc
+  - json-schema
+  - code-intelligence
+skills:
+  - json-lsp-setup

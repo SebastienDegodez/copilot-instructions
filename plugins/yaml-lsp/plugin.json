@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "yaml-lsp",
+  "version": "1.0.0",
+  "description": "YAML language server (Red Hat) with SchemaStore validation for GitHub Copilot CLI and Claude Code",
+  "author": {
+    "name": "Sebastien DEGODEZ"
+  },
+  "homepage": "https://github.com/SebastienDegodez/copilot-instructions/tree/main/plugins/yaml-lsp",
+  "repository": "https://github.com/SebastienDegodez/copilot-instructions",
+  "license": "Apache-2.0",
+  "keywords": [
+    "lsp",
+    "yaml",
+    "github-actions",
+    "docker-compose",
+    "openapi",
+    "json-schema"
+  ]
+}

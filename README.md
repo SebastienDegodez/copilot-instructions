@@ -68,7 +68,9 @@ This repository follows the [awesome-copilot](https://github.com/github/awesome-
 │   └── csharp-clean-architecture-development/
 ├── website/              # Astro static documentation site
 ├── docs/                 # Documentation and implementation plans
+├── .claude-plugin/       # Claude Code marketplace (LSP plugins)
 ├── .github/
+│   ├── plugin/           # Copilot CLI marketplace
 │   └── workflows/        # GitHub Actions for deployment and automation
 └── README.md
 ```
@@ -84,6 +86,37 @@ Comprehensive plugin for C# developers with DDD, Clean Architecture, CQRS, and t
 - **Installation**: See plugin README for details
 
 See [plugins/](plugins/) for more available plugins.
+
+### 🧠 LSP Plugins (Copilot CLI + Claude Code)
+
+One plugin per language server, giving the agent IDE-grade code intelligence (go-to-definition, references, rename, diagnostics, hover). Each plugin follows the [Agent Plugins 1.0](https://github.com/agentplugins/agent-plugins-spec) layout and works with both **GitHub Copilot CLI** (`com.github.copilot/lsp.json`) and **Claude Code** (`.lsp.json`). Each one ships a `<plugin>-setup` skill that checks the server installation. Plugin READMEs are written in French.
+
+| Plugin | Language server | Files |
+|---|---|---|
+| [python-lsp](plugins/python-lsp/) | Pyright | `.py` `.pyi` `.pyw` |
+| [java-lsp](plugins/java-lsp/) | Eclipse JDT.LS | `.java` |
+| [csharp-lsp](plugins/csharp-lsp/) | csharp-ls | `.cs` |
+| [typescript-lsp](plugins/typescript-lsp/) | TypeScript 7 native (`tsc --lsp`) | `.ts` `.tsx` `.js` `.jsx` `.mts` `.cts` `.mjs` `.cjs` |
+| [dockerfile-lsp](plugins/dockerfile-lsp/) | Docker Language Server | `.dockerfile` `.containerfile` |
+| [json-lsp](plugins/json-lsp/) | VS Code JSON Language Server | `.json` `.jsonc` |
+| [yaml-lsp](plugins/yaml-lsp/) | Red Hat YAML Language Server | `.yaml` `.yml` |
+| [markdown-lsp](plugins/markdown-lsp/) | Marksman | `.md` `.markdown` |
+| [gherkin-lsp](plugins/gherkin-lsp/) | Cucumber Language Server | `.feature` |
+| [bash-lsp](plugins/bash-lsp/) | Bash Language Server | `.sh` `.bash` |
+
+**Installation (Copilot CLI):**
+```bash
+copilot plugin marketplace add SebastienDegodez/copilot-instructions
+copilot plugin install python-lsp@copilot-instructions-sebastien-degodez
+```
+
+**Installation (Claude Code):**
+```bash
+/plugin marketplace add SebastienDegodez/copilot-instructions
+/plugin install python-lsp@copilot-instructions-sebastien-degodez
+```
+
+The language server binary itself must be installed separately; see each plugin README.
 
 ### SKRAFT
 

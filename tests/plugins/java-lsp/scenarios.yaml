@@ -1,0 +1,20 @@
+kind: plugin
+ref: plugins/java-lsp
+scenarios:
+  - name: install-and-verify-jdtls-server
+    description: Guide the user through installing and verifying the Java language server
+    prompt: |
+      I want Java code intelligence (go-to-definition, references) in Copilot CLI. Using the java-lsp plugin, explain how to install and verify the Java language server.
+    expectations:
+      keywords:
+        - "jdtls"
+        - "JDK 21"
+    judge:
+      criteria: |
+        Score on:
+        - Correctness: Is the exact server command and install command given?
+        - Verification: Does it explain how to check the server (check.sh, /lsp test jdtls)?
+        - Clarity: Are the steps actionable for both Copilot CLI and Claude Code?
+      passing_score: 7.0
+    timeout: 60
+    runs: 2

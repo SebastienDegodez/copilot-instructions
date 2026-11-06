@@ -1,0 +1,20 @@
+kind: plugin
+ref: plugins/bash-lsp
+scenarios:
+  - name: install-and-verify-bash-server
+    description: Guide the user through installing and verifying the Bash language server
+    prompt: |
+      I want Copilot CLI to report errors in my shell scripts. Using the bash-lsp plugin, explain how to install and verify the Bash language server.
+    expectations:
+      keywords:
+        - "bash-language-server"
+        - "shellcheck"
+    judge:
+      criteria: |
+        Score on:
+        - Correctness: Is the exact server command and install command given?
+        - Verification: Does it explain how to check the server (check.sh, /lsp test bash)?
+        - Clarity: Are the steps actionable for both Copilot CLI and Claude Code?
+      passing_score: 7.0
+    timeout: 60
+    runs: 2

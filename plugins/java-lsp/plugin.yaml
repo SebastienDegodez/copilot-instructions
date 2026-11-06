@@ -1,0 +1,13 @@
+name: java-lsp
+version: 1.0.0
+description: Java language server (Eclipse JDT.LS) for code intelligence in GitHub Copilot CLI and Claude Code
+author: Sebastien DEGODEZ
+tags:
+  - lsp
+  - java
+  - jdtls
+  - maven
+  - gradle
+  - code-intelligence
+skills:
+  - java-lsp-setup

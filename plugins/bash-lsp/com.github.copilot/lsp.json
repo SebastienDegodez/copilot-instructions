@@ -1,0 +1,14 @@
+{
+  "lspServers": {
+    "bash": {
+      "command": "bash-language-server",
+      "args": [
+        "start"
+      ],
+      "fileExtensions": {
+        ".sh": "shellscript",
+        ".bash": "shellscript"
+      }
+    }
+  }
+}

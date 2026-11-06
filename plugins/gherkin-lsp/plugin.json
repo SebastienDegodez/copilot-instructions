@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "gherkin-lsp",
+  "version": "1.0.0",
+  "description": "Gherkin language server (Cucumber) linking .feature steps to step definitions for GitHub Copilot CLI and Claude Code",
+  "author": {
+    "name": "Sebastien DEGODEZ"
+  },
+  "homepage": "https://github.com/SebastienDegodez/copilot-instructions/tree/main/plugins/gherkin-lsp",
+  "repository": "https://github.com/SebastienDegodez/copilot-instructions",
+  "license": "Apache-2.0",
+  "keywords": [
+    "lsp",
+    "gherkin",
+    "cucumber",
+    "bdd",
+    "reqnroll",
+    "specflow"
+  ]
+}
