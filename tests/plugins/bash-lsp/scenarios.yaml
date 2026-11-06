@@ -13,7 +13,7 @@ scenarios:
       criteria: |
         Score on:
         - Correctness: Is the exact server command and install command given?
-        - Verification: Does it explain how to check the server (check.sh, /lsp test bash)?
+        - Verification: Does it explain how to check the server (/lsp test bash in Copilot CLI)?
         - Clarity: Are the steps actionable for both Copilot CLI and Claude Code?
       passing_score: 7.0
     timeout: 60

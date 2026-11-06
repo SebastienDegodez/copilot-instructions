@@ -69,12 +69,6 @@ copilot plugin install SebastienDegodez/copilot-instructions:plugins/yaml-lsp
 
 ## ✅ 3. Vérifier que tout fonctionne
 
-**Script de diagnostic** fourni avec le plugin (depuis un clone de ce dépôt) :
-
-```bash
-bash plugins/yaml-lsp/skills/yaml-lsp-setup/scripts/check.sh
-```
-
 **Dans GitHub Copilot CLI** :
 
 ```text
@@ -83,8 +77,6 @@ bash plugins/yaml-lsp/skills/yaml-lsp-setup/scripts/check.sh
 ```
 
 **Dans Claude Code** : ouvrez une nouvelle session dans votre projet, puis demandez par exemple « Trouve toutes les références de `maFonction` ». En cas de souci, `claude --debug` affiche les journaux de démarrage du serveur.
-
-> 💡 Le plugin embarque la skill **`yaml-lsp-setup`** : demandez simplement à votre agent « Configure le LSP YAML » et il vérifiera l'installation pour vous.
 
 ## 🗂️ Fichiers pris en charge
 
@@ -121,10 +113,6 @@ yaml-lsp/
 ├── .lsp.json                        # Serveur LSP pour Claude Code
 ├── com.github.copilot/
 │   └── lsp.json                     # Serveur LSP pour Copilot CLI
-├── skills/
-│   └── yaml-lsp-setup/
-│       ├── SKILL.md                 # Skill d'installation et de diagnostic
-│       └── scripts/check.sh         # Vérifie la présence du serveur
 ├── plugin.yaml                      # Métadonnées du site de documentation
 └── README.md
 ```

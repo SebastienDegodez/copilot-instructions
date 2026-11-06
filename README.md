@@ -89,7 +89,7 @@ See [plugins/](plugins/) for more available plugins.
 
 ### 🧠 LSP Plugins (Copilot CLI + Claude Code)
 
-One plugin per language server, giving the agent IDE-grade code intelligence (go-to-definition, references, rename, diagnostics, hover). Each plugin follows the [Agent Plugins 1.0](https://github.com/agentplugins/agent-plugins-spec) layout and works with both **GitHub Copilot CLI** (`com.github.copilot/lsp.json`) and **Claude Code** (`.lsp.json`). Each one ships a `<plugin>-setup` skill that checks the server installation. Plugin READMEs are written in French.
+One plugin per language server, giving the agent IDE-grade code intelligence (go-to-definition, references, rename, diagnostics, hover). Each plugin follows the [Agent Plugins 1.0](https://github.com/agentplugins/agent-plugins-spec) layout and works with both **GitHub Copilot CLI** (`com.github.copilot/lsp.json`) and **Claude Code** (`.lsp.json`). Plugin READMEs are written in French.
 
 | Plugin | Language server | Files |
 |---|---|---|

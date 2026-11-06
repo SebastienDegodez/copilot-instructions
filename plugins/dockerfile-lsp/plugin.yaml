@@ -8,5 +8,4 @@ tags:
   - dockerfile
   - containers
   - code-intelligence
-skills:
-  - dockerfile-lsp-setup
+skills: []

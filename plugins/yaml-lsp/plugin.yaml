@@ -9,5 +9,4 @@ tags:
   - docker-compose
   - openapi
   - json-schema
-skills:
-  - yaml-lsp-setup
+skills: []
